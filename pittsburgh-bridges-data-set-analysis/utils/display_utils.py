@@ -147,6 +147,8 @@ def show_frequency_distribution_predictors(df, columns_2_avoid=None, features_vs
 
 def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None):
     
+    fig, ax = plt.subplots()
+    
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
         # if 'columns_2_avoid' is not None filter those columns
@@ -165,16 +167,21 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
     sns.set(style="darkgrid")
     
     target = df[target_col].value_counts()
+    target_vals = df[target_col].values
     target_idx = target.index
-    target_vals = target.values
+    # target_vals = target.values
     # for index, predictor in enumerate(df.columns):
     for _, predictor in enumerate(columns_2_keep):
         # print(index, predictor)
-        predictor_count = df[predictor].value_counts()
+        # predictor_count = df[predictor].value_counts()
+        predictor_vals = df[predictor].values
         
         data = []
         for _, idx in enumerate(target_idx):
-            data.append(predictor_count.values[target_vals == idx])
+            
+            res = [i for i, val in enumerate(target_vals == idx) if val]
+            vals = [predictor_vals[i] for i, val in enumerate(res)]
+            data.append(vals)
             pass
     
         # build a box plot
