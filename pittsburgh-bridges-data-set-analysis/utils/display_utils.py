@@ -1,3 +1,9 @@
+# =========================================================================== #
+# IMPORTS
+# =========================================================================== #
+
+# Standard Imports (Data Manipulation and Graphics)
+# --------------------------------------------------------------------------- #
 import numpy as np    # Load the Numpy library with alias 'np' 
 import pandas as pd   # Load the Pandas library with alias 'pd' 
 
@@ -13,6 +19,10 @@ import chart_studio.plotly.plotly as py
 
 import pprint
 from sklearn.decomposition import PCA
+
+# =========================================================================== #
+# FUNCTIONS
+# =========================================================================== #
 
 def display_heatmap(corr):
     '''Dispalyes a heatmap related to the correlation matrix computed for the dataset analysed.'''
@@ -110,6 +120,91 @@ def show_frequency_distribution_predictors(df, columns_2_avoid=None, features_vs
         columns_2_keep = list(filter(lambda x: x not in columns_2_avoid, df.columns))
     else:
         columns_2_keep = df.columns
+    
+    sns.set(style="darkgrid")
+    # for index, predictor in enumerate(df.columns):
+    for _, predictor in enumerate(columns_2_keep):
+        # print(index, predictor)
+        predictor_count = df[predictor].value_counts()
+
+        if features_vs_values is not None:
+            l = list()
+            print(features_vs_values[predictor])
+            for k, v in features_vs_values[predictor].items():
+                for val in predictor_count.index:
+                    if val == v:
+                        l.append(k)
+                        break
+            sns.barplot(l, predictor_count.values, alpha=0.9)
+        else:
+            sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
+        
+        plt.title('Frequency Distribution of %s' % (predictor))
+        plt.ylabel('Number of Occurrences', fontsize=12)
+        plt.xlabel('%s' % (predictor), fontsize=12)
+        plt.show()
+    pass
+
+def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None):
+    
+    # Setu up columns names to be used for building up related histograms
+    if columns_2_avoid is not None:
+        # if 'columns_2_avoid' is not None filter those columns
+        columns_2_keep = list(filter(lambda x: x not in columns_2_avoid, df.columns))
+    else:
+        columns_2_keep = df.columns
+
+    if predictor_name is not None:
+        if type(predictor_name) is not str:
+            # if 'redicotr_name' is not str
+            # treat it as a iterable
+            columns_2_keep = list(set(predictor_name) & set(columns_2_keep))
+        else:
+            columns_2_keep = list(set([predictor_name]) & set(columns_2_keep))
+    
+    sns.set(style="darkgrid")
+    
+    target = df[target_col].value_counts()
+    target_idx = target.index
+    target_vals = target.values
+    # for index, predictor in enumerate(df.columns):
+    for _, predictor in enumerate(columns_2_keep):
+        # print(index, predictor)
+        predictor_count = df[predictor].value_counts()
+        
+        data = []
+        for _, idx in enumerate(target_idx):
+            data.append(predictor_count.values[target_vals == idx])
+            pass
+    
+        # build a box plot
+        ax.boxplot(data)
+        ax.set_title('box plot')
+
+        xticklabels = list(map(lambda xi: str(xi), target_idx))
+        ax.set_xticklabels(xticklabels)
+
+        # show the plot
+        plt.show()
+        pass
+    pass
+
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None):
+    
+    # Setu up columns names to be used for building up related histograms
+    if columns_2_avoid is not None:
+        # if 'columns_2_avoid' is not None filter those columns
+        columns_2_keep = list(filter(lambda x: x not in columns_2_avoid, df.columns))
+    else:
+        columns_2_keep = df.columns
+
+    if predictor_name is not None:
+        if type(predictor_name) is not str:
+            # if 'redicotr_name' is not str
+            # treat it as a iterable
+            columns_2_keep = list(set(predictor_name) & set(columns_2_keep))
+        else:
+            columns_2_keep = list(set([predictor_name]) & set(columns_2_keep))
     
     sns.set(style="darkgrid")
     # for index, predictor in enumerate(df.columns):

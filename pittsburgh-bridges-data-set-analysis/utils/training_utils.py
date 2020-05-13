@@ -1,4 +1,9 @@
+# =========================================================================== #
+# IMPORTS
+# =========================================================================== #
+
 # Standard Imports (Data Manipulation and Graphics)
+# --------------------------------------------------------------------------- #
 import numpy as np    # Load the Numpy library with alias 'np' 
 import pandas as pd   # Load the Pandas library with alias 'pd' 
 
@@ -13,6 +18,8 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 
+# Sklearn Imports
+# --------------------------------------------------------------------------- #
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
@@ -51,7 +58,9 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import RandomForestClassifier
 
 
-
+# =========================================================================== #
+# FUNCTIONS
+# =========================================================================== #
 def get_classifier(type_classifier, params_classifier):
     if type_classifier == 'sgd':
         clf = SGDClassifier(loss=params_classifier.best_params_['clf__loss'], penalty=params_classifier.best_params_['clf__penalty'], \
@@ -129,7 +138,8 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
         - n_jobs: integer, default=-1, allows, or enables to let the work station within which the training script is lauched to discover
                   and eventually exploit a baunch of cpu for increasing the performance during training phase.
     '''
-    # === Splitting dataset into training and test sets, respectively, both features and labels === #
+    # Splitting dataset into training and test sets, respectively, both features and labels
+    # -------------------------------------------------------------------------------------
     if sss_flag is False:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=random_state)
@@ -145,7 +155,8 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
         # sss = StratifiedShuffleSplit(n_splits=cv, test_size=test_size * 2, random_state=random_state)
         # cv = sss.split(X_train, y_train)
 
-    # === Performing only once for all Principal Component === #
+    # Performing only once for all Principal Component
+    # -------------------------------------------------------------------------------------
     n_components = X.shape[1]
     pca = PCA(n_components=n_components)
     
@@ -153,15 +164,17 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
     backup_pcs_ = copy.copy(pca.components_)
     # print(f"Shape principal componets: {backup_pcs_.shape}")
     
-    print(f'==== GRID SEARCH METHOD APPLYED ON: {technique.split(",")[0]} Technique ====')
-    print(f'==== PREPROCESSING METHOD: {technique.split(",")[1]} Technique ====')
+    print(f'# GRID SEARCH METHOD APPLYED ON: {technique.split(",")[0]} Technique')
+    print(f'# PREPROCESSING METHOD: {technique.split(",")[1]} Technique ')
+    print('#' + "=" * 100)
     for pos, n_components in enumerate(n):
-        print('\n', "*" * 20, sep='')
         print(f"Grid Search attempt no. : {pos+1}")
+        print("-" * 100, sep='')
         tmp_cv = cv
         
         if True:
-            # === Preparing Feature Space by means of retained Principal Components === #
+            # Preparing Feature Space by means of retained Principal Components
+            # -------------------------------------------------------------------------------------
             n = len(pca.components_[n_components:])    
             pca.components_[n_components:] = [[0] * X.shape[1]] * n
         
@@ -171,14 +184,16 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
                 sss = StratifiedShuffleSplit(n_splits=cv, test_size=test_size * 0.5, random_state=random_state)
                 cv = sss.split(X_train, y_train)
         
-            # === Performing training phase === #
+            # Performing training phase
+            # -------------------------------------------------------------------------------------
             gs_clf = GridSearchCV(clf, parameters, cv=cv, iid=iid, n_jobs=n_jobs)
             gs_clf = gs_clf.fit(X_train_pca, y_train)
         
         
-            # === Evaluating performances === #
+            # Evaluating performances
+            # -------------------------------------------------------------------------------------
             predicted = gs_clf.predict(pca.transform(X_test))
-    
+            print()
             print("--- Classification Report ---")
             print(metrics.classification_report(y_test, predicted,
                                                 target_names=['negative', 'positive']))
@@ -200,7 +215,8 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
             except Exception as err:
                 print(err)
             # evaluate_best_current_model_(X, y, pca, gs_clf, test_size, random_state, type_classifier)
-            # === Restoring overall pcs for further, subsequent evaluation === #
+            # Restoring overall pcs for further, subsequent evaluation
+            # -------------------------------------------------------------------------------------
             pca.components_ = copy.copy(backup_pcs_)
             cv = tmp_cv
             
@@ -247,8 +263,8 @@ def plot_roc_crossval(X, y):
     random_state = np.random.RandomState(0)
     X = np.c_[X, random_state.randn(n_samples, 200 * n_features)]
 
-    # #############################################################################
     # Classification and ROC analysis
+    # -----------------------------------------------------------------------------
 
     # Run classifier with cross-validation and plot ROC curves
     cv = StratifiedKFold(n_splits=6)
@@ -298,7 +314,7 @@ def plot_roc_crossval(X, y):
     plt.show()
     pass
 
-def svm_linear_classifier_grid_search(X, y, kernel_type=None):
+def svm_linear_classifier_grid_search(X, y, kernel_type=None, parameters_svm=None):
     test_size, random_state = 0.25, 50
 
     # Pipeline classifier definition
@@ -308,14 +324,15 @@ def svm_linear_classifier_grid_search(X, y, kernel_type=None):
                 random_state=70, max_iter=50, tol=None)),
         ])
          # Hyper-params definition, dictionary containing possible values established
-        parameters_svm = {
-            # 'clf__loss': ('hinge', 'squared_hinge'),
-            'clf__penalty': ('l2','l1'),
-            'clf__C': (1.0, 0.1, 0.001, 0.0001, 10.0),
-            # 'clf__max_iter': (50, 100, 150, 200, 500, 1000, 1500, 2000),
-            # 'clf__tol': (1e-2, 1e-4, 1e-5, 1e-6),
-            # 'clf_dual': (True, False)
-        }
+        if parameters_svm is None:
+            parameters_svm = {
+                # 'clf__loss': ('hinge', 'squared_hinge'),
+                'clf__penalty': ('l2','l1'),
+                'clf__C': (1.0, 0.1, 0.001, 0.0001, 10.0),
+                # 'clf__max_iter': (50, 100, 150, 200, 500, 1000, 1500, 2000),
+                # 'clf__tol': (1e-2, 1e-4, 1e-5, 1e-6),
+                # 'clf_dual': (True, False)
+            }
         type_classifier = 'linear-svm'
         kernel_type = ''
     
@@ -324,11 +341,12 @@ def svm_linear_classifier_grid_search(X, y, kernel_type=None):
             ('clf', svm.SVC()),
         ])
         # Hyper-params definition, dictionary containing possible values established
-        parameters_svm = {
-            'clf__gamma': (0.003, 0.03, 0.05, 0.5, 0.7, 1.0, 1.5),
-            'clf__max_iter':(1e+2, 1e+3, 2 * 1e+3, 5 * 1e+3, 1e+4, 1.5 * 1e+3),
-            'clf__C': (1e-4, 1e-3, 1e-2, 0.1, 1.0, 10, 1e+2, 1e+3),
-        }
+        if parameters_svm is None:
+            parameters_svm = {
+                'clf__gamma': (0.003, 0.03, 0.05, 0.5, 0.7, 1.0, 1.5),
+                'clf__max_iter':(1e+2, 1e+3, 2 * 1e+3, 5 * 1e+3, 1e+4, 1.5 * 1e+3),
+                'clf__C': (1e-4, 1e-3, 1e-2, 0.1, 1.0, 10, 1e+2, 1e+3),
+            }
         parameters_svm['clf__kernel'] = ('rbf','linear')
         kernel_type = 'RBF_SVM'
         type_classifier = 'rbf-svm'
@@ -345,7 +363,7 @@ def svm_linear_classifier_grid_search(X, y, kernel_type=None):
         type_classifier=type_classifier)
     pass
 
-def naive_bayes_classifier_grid_search(X, y):
+def naive_bayes_classifier_grid_search(X, y, parmas_naive_bayes=None):
     
     type_classifier = 'naive-bayes'
     test_size, random_state = 0.20, 50
@@ -357,7 +375,8 @@ def naive_bayes_classifier_grid_search(X, y):
         ('clf', GaussianNB()),
     ])
     
-    parmas_naive_bayes = {}
+    if parmas_naive_bayes is None:
+        parmas_naive_bayes = {}
     
     # Run the grid-search technique
     grid_search_approach('{}_Classifier,MinMax'.format('Naive_Bayes'), n, clf_naive_bayes, \
@@ -366,7 +385,7 @@ def naive_bayes_classifier_grid_search(X, y):
         type_classifier=type_classifier)
     pass
 
-def decision_tree_classifier_grid_search(X, y):
+def decision_tree_classifier_grid_search(X, y, parmas_decision_tree=None):
     
     type_classifier = 'decision-tree'
     test_size, random_state = 0.25, 50
@@ -378,11 +397,12 @@ def decision_tree_classifier_grid_search(X, y):
         ('clf', DecisionTreeClassifier(random_state=random_state)),
     ])
     
-    parmas_random_forest = {
-        'clf__splitter': ('random', 'best'),
-        'clf__criterion':('gini', 'entropy'),
-        'clf__max_features': (None, 'auto', 'sqrt', 'log2')
-    }
+    if parmas_decision_tree is None:
+        parmas_decision_tree = {
+            'clf__splitter': ('random', 'best'),
+            'clf__criterion':('gini', 'entropy'),
+            'clf__max_features': (None, 'auto', 'sqrt', 'log2')
+        }
     
     # Run the grid-search technique
     grid_search_approach('{}_Classifier,MinMax'.format('Random_Forest'), n, clf_random_forest, \
@@ -391,7 +411,7 @@ def decision_tree_classifier_grid_search(X, y):
         type_classifier=type_classifier)
     pass
 
-def random_forest_classifier_grid_search(X, y):
+def random_forest_classifier_grid_search(X, y, parmas_random_forest=None):
     
     type_classifier = 'random-forest'
     test_size, random_state = 0.15, 50
@@ -403,11 +423,12 @@ def random_forest_classifier_grid_search(X, y):
         ('clf', RandomForestClassifier(random_state=random_state)),
     ])
     
-    parmas_random_forest = {
-        'clf__n_estimators': (3, 5, 7, 10, 30, 50, 70, 100, 150, 200),
-        'clf__criterion':('gini', 'entropy'),
-        'clf__bootstrap': (True, False)
-    }
+    if parmas_random_forest is None:
+        parmas_random_forest = {
+            'clf__n_estimators': (3, 5, 7, 10, 30, 50, 70, 100, 150, 200),
+            'clf__criterion':('gini', 'entropy'),
+            'clf__bootstrap': (True, False)
+        }
     
     # Run the grid-search technique
     grid_search_approach('{}_Classifier,MinMax'.format('Random_Forest'), n, clf_random_forest, \
