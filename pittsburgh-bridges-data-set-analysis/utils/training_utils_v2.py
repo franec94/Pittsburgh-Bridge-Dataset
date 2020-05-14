@@ -534,7 +534,7 @@ def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
         print(f"accuracy score (percentage): {accuracy_score(ytest, y_model)*100:.2f}%")
     return clf
 
-def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, cv_list=None, verbose=0):
+def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0):
     dfs_list = []
     for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         res_df = fit_by_n_components(
@@ -545,6 +545,7 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             clf_type=f"{estimator_name}", \
             verbose=verbose,
             cv_list=cv_list,
+            pca_kernels_list=pca_kernels_list,
             show_plots=show_plots)
         dfs_list.append(res_df)
     return dfs_list
@@ -566,7 +567,7 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
     errors_list = []
     
     # print(pca_kernels_list)
-    for kernel in pca_kernels_list:
+    for ii, kernel in enumerate(pca_kernels_list):
         step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
         try:
             if verbose == 1:
@@ -606,7 +607,12 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
             
             record = record + [f"{res_sscv[0]:.2f}"]
             record = record + [f"(+/-) {res_sscv[1]:.2f}"]
-            data.append(copy.deepcopy(record))
+            if len(data) == 0:
+                data = [[]] * (len(cv_list) + 2)
+            for ii in range(0, len(data)):
+                # print([record[ii*2], record[ii*2+1]])
+                data[ii] = data[ii] + [record[ii*2], record[ii*2+1]]
+            # data.append(copy.deepcopy(record))
             # pprint(data)
             
             if show_plots:
@@ -631,14 +637,25 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
             pprint(errors_list)
         
         pass
-    col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", cv_list))
-    col_names_st = list(map(lambda xi: f"STD(cv={xi})", cv_list))
+    
+    # col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", cv_list))
+    # col_names_st = list(map(lambda xi: f"STD(cv={xi})", cv_list))
         
         
-    col_names = list(itertools.chain.from_iterable(list(zip(col_names_acc, col_names_st))))
-    col_names = col_names + ['ACC(loo)', 'STD(loo)', 'ACC(Stfd-CV)', 'STD(Stfd-CV)']
-        
-    df = pd.DataFrame(data=data, columns=col_names,  index=pca_kernels_list)
+    # col_names = list(itertools.chain.from_iterable(list(zip(col_names_acc, col_names_st))))
+    # col_names = col_names + ['ACC(loo)', 'STD(loo)', 'ACC(Stfd-CV)', 'STD(Stfd-CV)']
+    
+    col_names = list(map(lambda xi: f"CV={xi}".lower(), cv_list))
+    col_names = col_names + ['loo'.lower(), 'Stfd-CV'.lower()]
+    idx_names = copy.deepcopy(col_names)
+    
+    col_names = []
+    for kernel in pca_kernels_list:
+        col_names = col_names + [f"{kernel} - ACC".lower().capitalize(), f"{kernel} - STD".lower().capitalize()]
+    # df = pd.DataFrame(data=data, columns=col_names,  index=pca_kernels_list)
+    # pprint(data)
+    # pprint(col_names)
+    df = pd.DataFrame(data=data, columns=col_names,  index=idx_names)
     return df
 
 def grid_search_kfold_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest, title=None):
