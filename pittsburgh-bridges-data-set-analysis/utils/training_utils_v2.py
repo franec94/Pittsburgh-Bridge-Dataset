@@ -479,7 +479,7 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 # --------------------------------------------------------------------------- #
 # Other Functions
 # --------------------------------------------------------------------------- #
-def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
+def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0, cv_list=[3,4,5,10]):
     # K-Fold Cross-Validation
     if verbose == 1:
         print()
@@ -488,7 +488,7 @@ def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=
         print('-' * 100)
     
     res = []
-    for cv in [3,4,5,10]:
+    for cv in cv_list:
         clf_cloned = sklearn.base.clone(clf)
         scores = cross_val_score(clf_cloned, Xtrain, ytrain, cv=cv)
         if verbose == 1:
@@ -534,7 +534,7 @@ def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
         print(f"accuracy score (percentage): {accuracy_score(ytest, y_model)*100:.2f}%")
     return clf
 
-def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, verbose=0):
+def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, cv_list=None, verbose=0):
     dfs_list = []
     for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         res_df = fit_by_n_components(
@@ -544,11 +544,12 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             n_components=n_components, \
             clf_type=f"{estimator_name}", \
             verbose=verbose,
+            cv_list=cv_list,
             show_plots=show_plots)
         dfs_list.append(res_df)
     return dfs_list
 
-def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, verbose=0):
+def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0):
     
     data = []
     
@@ -583,7 +584,7 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
             Xtest_transformed = kernel_pca.transform(Xtest)
 
             clf_cloned = sklearn.base.clone(estimator)
-            res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
+            res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose, cv_list=cv_list)
 
             clf_cloned = sklearn.base.clone(estimator)
             res_loo = loo_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
@@ -630,8 +631,8 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
             pprint(errors_list)
         
         pass
-    col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", [xi[0] for xi in res_kf]))
-    col_names_st = list(map(lambda xi: f"STD(cv={xi})", [xi[0] for xi in res_kf]))
+    col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", cv_list))
+    col_names_st = list(map(lambda xi: f"STD(cv={xi})", cv_list))
         
         
     col_names = list(itertools.chain.from_iterable(list(zip(col_names_acc, col_names_st))))
