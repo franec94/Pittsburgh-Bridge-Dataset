@@ -237,22 +237,38 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
         plt.show()
     pass
 
+def show_histograms_from_heatmap_corr_matrix(corr_matrix, num_rows=None, row_names=None):
+    assert type(corr_matrix) is pd.DataFrame, f"corr_matrix's type is {type(corr_matrix)}, that is not of type pd.DataFrame as requested"
+    if num_rows is None:
+        num_rows = corr_matrix.shape[0]
+    if row_names is None:
+        row_names = list(map(lambda xi: 'Variable no.%d' % (xi,), range(corr_matrix.shape[0])))
+    pairs = zip(range(num_rows), row_names[:num_rows])
+    for _, (ii, row_name) in enumerate(pairs):
+        plt.figure()
+        plt.title(row_name)
+        plt.hist(corr_matrix.values[ii])
+        pass
+    pass
+
 def show_categorical_predictor_values(df, columns_2_avoid=None):
     
     if columns_2_avoid is not None:
         columns_2_keep = list(filter(lambda x: x not in columns_2_avoid, df.columns))
     else:
         columns_2_keep = df.columns
+        
+    max_len_name = max(list(map(lambda xi: len(xi), columns_2_keep)))
     
     list_columns = list()
     # for index, predictor in enumerate(df.columns):
     for _, predictor in enumerate(columns_2_keep):
         # print(index, predictor)
-       labels = df[predictor].astype('category').cat.categories.tolist()
-       # pprint.pprint(predictor, labels)
-       print(predictor, ' : ',labels)
-       if '?' in labels:
-           list_columns.append(predictor)
+        labels = df[predictor].astype('category').cat.categories.tolist()
+        # pprint.pprint(predictor, labels)
+        print(f"%-{max_len_name}s" % (predictor,), ':', labels)
+        if '?' in labels:
+            list_columns.append(predictor)
 
     # pass
     return list_columns

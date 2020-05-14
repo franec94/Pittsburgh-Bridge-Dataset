@@ -1,9 +1,7 @@
-# =========================================================================== #
-# IMPORTS
-# =========================================================================== #
+import sklearn
+from pprint import pprint
 
 # Standard Imports (Data Manipulation and Graphics)
-# --------------------------------------------------------------------------- #
 import numpy as np    # Load the Numpy library with alias 'np' 
 import pandas as pd   # Load the Pandas library with alias 'pd' 
 
@@ -12,18 +10,19 @@ import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns'
 import copy
 from scipy import stats
 from scipy import interp
+from itertools import islice
+import itertools
 
 # Matplotlib pyplot provides plotting API
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 
-# Sklearn Imports
-# --------------------------------------------------------------------------- #
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
+from sklearn.decomposition import KernelPCA
 from sklearn.model_selection import train_test_split
 
 from sklearn.preprocessing import MinMaxScaler
@@ -56,6 +55,21 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import RandomForestClassifier
+
+# Import scikit-learn classes: Hyperparameters Validation utility functions.
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import LeavePOut
+from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import validation_curve
+from sklearn.model_selection import learning_curve
+
+# Import scikit-learn classes: model's evaluation step utility functions.
+from sklearn.metrics import accuracy_score 
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import plot_roc_curve
+from sklearn.metrics import roc_curve
+
 
 
 # =========================================================================== #
@@ -460,4 +474,343 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
         parmas_random_forest, X, y, \
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)
+    pass
+
+# --------------------------------------------------------------------------- #
+# Other Functions
+# --------------------------------------------------------------------------- #
+def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
+    # K-Fold Cross-Validation
+    if verbose == 1:
+        print()
+        print('-' * 100)
+        print('K-Fold Cross Validation')
+        print('-' * 100)
+    
+    res = []
+    for cv in [3,4,5,10]:
+        clf_cloned = sklearn.base.clone(clf)
+        scores = cross_val_score(clf_cloned, Xtrain, ytrain, cv=cv)
+        if verbose == 1:
+            print("CV=%d | Accuracy: %0.2f (+/- %0.2f)" % (cv, scores.mean(), scores.std() * 2))
+        res.append([cv, scores.mean(), scores.std() * 2])
+    return res
+
+def loo_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
+    # Leave-One-Out Cross-Validation
+    if verbose == 1:
+        print()
+        print('-' * 100)
+        print('Leave-One-Out Cross-Validation')
+        print('-' * 100)
+    scores = cross_val_score(clf, Xtrain, ytrain, cv=LeaveOneOut())
+    if verbose == 1:
+        print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+    return (scores.mean(), scores.std() * 2)
+
+def stratified_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, n_splits=3, verbose=0):
+    # Stratified-K-Fold Cross-Validation
+    if verbose == 1:
+        print()
+        print('-' * 100)
+        print('Stratified-K-Fold Cross-Validation')
+        print('-' * 100)
+    skf = StratifiedKFold(n_splits=n_splits)
+    scores = cross_val_score(clf, Xtrain, ytrain, cv=skf)
+    if verbose == 1:
+        print("Accuracy: %0.2f (+/- %0.2f) | Accuract Test:" % (scores.mean(), scores.std() * 2))
+    return (scores.mean(), scores.std() * 2)
+
+def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
+    if verbose == 1:
+        print()
+        print('-' * 100)
+        print('Fit')
+        print('-' * 100)
+    clf.fit(Xtrain, ytrain)
+    y_model = clf.predict(Xtest) # 4. Predict sample's class labels
+    if verbose == 1:
+        print('accuracy score:', accuracy_score(ytest, y_model))
+        print(f"accuracy score (percentage): {accuracy_score(ytest, y_model)*100:.2f}%")
+    return clf
+
+def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, verbose=0):
+    
+    data = []
+    
+    Xtrain, Xtest, ytrain, ytest = train_test_split(
+        X, y,
+        random_state=random_state)
+
+    if pca_kernels_list is None:
+        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    if type(pca_kernels_list) is not list:
+        pca_kernels_list = [pca_kernels_list]
+    errors_list = []
+    for kernel in pca_kernels_list:
+        step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
+        try:
+            if verbose == 1:
+                print()
+                print('=' * 100)
+                print(step_msg)
+                print('=' * 100)
+    
+            kernel_pca =KernelPCA( \
+                n_components=n_components, \
+                kernel=kernel)              
+            kernel_pca.fit(Xtrain)                    
+
+            Xtrain_transformed = kernel_pca.transform(Xtrain)
+            Xtest_transformed = kernel_pca.transform(Xtest)
+
+            clf_cloned = sklearn.base.clone(estimator)
+            res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
+
+            clf_cloned = sklearn.base.clone(estimator)
+            res_loo = loo_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
+            
+            clf_cloned = sklearn.base.clone(estimator)
+            res_sscv = stratified_cross_validation(clf_cloned, Xtrain, ytrain, n_splits=3, verbose=verbose)
+
+            clf_cloned = sklearn.base.clone(estimator)
+            clf = fit(clf_cloned, Xtrain_transformed, ytrain, Xtest_transformed, ytest, verbose=verbose)
+            
+            # record = list(map(lambda xi: f"{xi[0]:.2f} (+/-) {xi[1]:.2f}", [xi[1:] for xi in res_kf]))
+            record_acc = list(map(lambda xi: f"{xi[1]:.2f}", [xi for xi in res_kf]))
+            record_std = list(map(lambda xi: f"(+/-) {xi[2]:.2f}", [xi for xi in res_kf]))
+            
+            record = list(itertools.chain.from_iterable(list(zip(record_acc, record_std))))
+            
+            record = record + [f"{res_loo[0]:.2f}"]
+            record = record + [f"(+/-) {res_loo[1]:.2f}"]
+            
+            record = record + [f"{res_sscv[0]:.2f}"]
+            record = record + [f"(+/-) {res_sscv[1]:.2f}"]
+            data.append(record)
+            
+            if show_plots:
+                plot_roc_curve_custom(
+                    clf,
+                    Xtest_transformed,
+                    ytest,
+                    'n_components={} | kernel={}'.format(n_components, kernel))
+                plot_conf_matrix(
+                    clf,
+                    Xtest_transformed,
+                    ytest,
+                    title='n_components={} | kernel={}'.format(10, kernel))
+        except Exception as err:
+            print('ERROR: ' + step_msg + ' ' + str(err))
+            errors_list.append('ERROR: ' + step_msg + ' ' + str(err))
+            pass
+        if show_errors:
+            print('-' * 100)
+            print('Erors')
+            print('-' * 100)
+            pprint(errors_list)
+        
+        col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", [xi[0] for xi in res_kf]))
+        col_names_st = list(map(lambda xi: f"STD(cv={xi})", [xi[0] for xi in res_kf]))
+        
+        
+        col_names = list(itertools.chain.from_iterable(list(zip(col_names_acc, col_names_st))))
+        col_names = col_names + ['ACC(loo)', 'STD(loo)', 'ACC(Stfd-CV)', 'STD(Stfd-CV)']
+        
+        df = pd.DataFrame(data=data, columns=col_names,  index=pca_kernels_list)
+        return df
+
+def grid_search_kfold_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest, title=None):
+    # K-Fold Cross-Validation
+    print()
+    print('-' * 100)
+    print('K-Fold Cross Validation')
+    print('-' * 100)
+    for cv in [3,4,5,10]:
+          
+        print('#' * 50)
+        print('CV={}'.format(cv))
+        print('#' * 50)
+        clf_cloned = sklearn.base.clone(clf)
+        grid = GridSearchCV(
+            estimator=clf_cloned, param_grid=param_grid,
+            cv=cv, verbose=0)
+          
+        grid.fit(Xtrain, ytrain)
+        print()
+        print('[*] Best Params:')
+        pprint(grid.best_params_)
+
+        print()
+        print('[*] Best Estimator:')
+        pprint(grid.best_estimator_)
+
+        print()
+        print('[*] Best Score:')
+        pprint(grid.best_score_)
+          
+        plot_conf_matrix(grid, Xtest, ytest, title)
+        # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
+        plot_roc_curve(grid, Xtest, ytest)
+        pass
+    pass
+
+def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest,title=None):
+    # Stratified-K-Fold Cross-Validation
+    print()
+    print('-' * 100)
+    print('Stratified-K-Fold Cross-Validation')
+    print('-' * 100)
+
+    loo = LeaveOneOut()
+    grid = GridSearchCV(
+        estimator=clf, param_grid=param_grid,
+        cv=loo, verbose=0)
+          
+    grid.fit(Xtrain, ytrain)
+    print()
+    print('[*] Best Params:')
+    pprint(grid.best_params_)
+
+    print()
+    print('[*] Best Estimator:')
+    pprint(grid.best_estimator_)
+
+    print()
+    print('[*] Best Score:')
+    pprint(grid.best_score_)
+          
+    plot_conf_matrix(grid, Xtest, ytest, title)
+    # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
+    plot_roc_curve(grid, Xtest, ytest)
+    pass
+
+def grid_search_stratified_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest, n_splits=3, title=None):
+    # Stratified-K-Fold Cross-Validation
+    print()
+    print('-' * 100)
+    print('Stratified-K-Fold Cross-Validation')
+    print('-' * 100)
+
+    skf = StratifiedKFold(n_splits=n_splits)
+    grid = GridSearchCV(
+        estimator=clf, param_grid=param_grid,
+        cv=skf, verbose=0)
+          
+    grid.fit(Xtrain, ytrain)
+    print()
+    print('[*] Best Params:')
+    pprint(grid.best_params_)
+
+    print()
+    print('[*] Best Estimator:')
+    pprint(grid.best_estimator_)
+
+    print()
+    print('[*] Best Score:')
+    pprint(grid.best_score_)
+          
+    plot_conf_matrix(grid, Xtest, ytest, title)
+    # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
+    plot_roc_curve(grid, Xtest, ytest)
+    pass
+
+def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False):
+    
+    Xtrain, Xtest, ytrain, ytest = train_test_split(
+        X, y,
+        random_state=random_state)
+
+    kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    errors_list = []
+    for kernel in kernels_list:
+        step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
+        try:
+            print()
+            print('=' * 100)
+            print(step_msg)
+            print('=' * 100)
+          
+            title = 'n_components={} | kernel={}'.format(n_components, kernel)
+    
+            kernel_pca =KernelPCA( \
+                n_components=n_components, \
+                kernel=kernel)              
+            kernel_pca.fit(Xtrain)
+            
+            Xtrain_transformed = kernel_pca.transform(Xtrain)
+            Xtest_transformed = kernel_pca.transform(Xtest)
+          
+
+            clf_cloned = sklearn.base.clone(estimator)
+            grid_search_kfold_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
+          
+            clf_cloned = sklearn.base.clone(estimator)
+            grid_search_loo_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
+                      
+            clf_cloned = sklearn.base.clone(estimator)
+            grid_search_stratified_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, n_splits=3, title=title)
+
+            if show_plots:
+                plot_roc_curve(
+                    clf,
+                    Xtest_transformed,
+                    ytest,
+                    )
+                plot_conf_matrix(
+                    clf,
+                    Xtest_transformed,
+                    ytest,
+                    title=title)
+        except Exception as err:
+            err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
+            print(err_msg)
+            errors_list.append(err_msg)
+            pass
+        if show_errors:
+            print('-' * 100)
+            print('Erors')
+            print('-' * 100)
+            pprint(errors_list)
+        pass
+
+def plot_conf_matrix(model, Xtest, ytest, title=None):
+    
+    y_model = model.predict(Xtest)
+    mat = confusion_matrix(ytest, y_model)
+    
+    plt.figure()
+    sns.heatmap(mat, square=True, annot=True, cbar=False)
+    plt.xlabel('predicted value')
+    plt.ylabel('true value')
+    if title:
+        plt.title(title)
+    pass
+
+def plot_roc_curve_custom(model, X_test, y_test, label, title=None):
+    
+    y_pred = model.predict_proba(X_test)
+    # print('y_test', type(y_test)); print('y_pred', type(y_pred));
+    # print('y_test', y_test.shape); print('y_pred', y_pred.shape);
+    
+    # print('y_test', y_test[0], 'y_pred', y_pred[0])
+    
+    # y_test_prob = np.array(list(map(lambda xi: [1, 0] if xi == 0 else [0, 1], y_test)))
+    # fpr, tpr, _ = roc_curve(y_test_prob, y_pred)
+    
+    y_pred = np.argmax(y_pred, axis=1)
+    fpr, tpr, _ = roc_curve(y_test, y_pred)
+    
+    plt.figure()
+    plt.plot(fpr, tpr, label=label)
+    plt.plot([0, 1], [0, 1], 'k--')
+    
+    plt.xlabel('False positive rate')
+    plt.ylabel('True positive rate')
+    if  title:
+        plt.title('ROC curve: '.format(title))
+    else:
+        plt.title('ROC curve')
+    plt.legend(loc='best')
+    plt.show()
     pass
