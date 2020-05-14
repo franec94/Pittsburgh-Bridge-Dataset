@@ -1,24 +1,77 @@
-# =========================================================================== #
-# IMPORTS
-# =========================================================================== #
+import sklearn
+from pprint import pprint
 
 # Standard Imports (Data Manipulation and Graphics)
-# --------------------------------------------------------------------------- #
 import numpy as np    # Load the Numpy library with alias 'np' 
 import pandas as pd   # Load the Pandas library with alias 'pd' 
 
 import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns' 
 
 import copy
+import os
+import sys
 from scipy import stats
+from scipy import interp
+from itertools import islice
+import itertools
 
 # Matplotlib pyplot provides plotting API
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 
-import pprint
+# Preprocessing Imports
+# from sklearn.preprocessing import StandardScaler
+from sklearn import preprocessing
 from sklearn.decomposition import PCA
+from sklearn.decomposition import KernelPCA
+from sklearn.model_selection import train_test_split
+
+from sklearn.preprocessing import MinMaxScaler
+
+from sklearn.preprocessing import StandardScaler # Standardize data (0 mean, 1 stdev)
+from sklearn.preprocessing import Normalizer     # Normalize data (length of 1)
+from sklearn.preprocessing import Binarizer      # Binarization
+
+# Imports for handling Training
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import GridSearchCV
+
+# After Training Analysis Imports
+from sklearn import metrics
+from sklearn.metrics import roc_curve, auc
+
+# Classifiers Imports
+# SVMs Classifieres
+from sklearn.svm import LinearSVC
+from sklearn.linear_model import SGDClassifier
+from sklearn import svm
+
+# Bayesian Classifieres
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import GaussianNB
+
+# Decision Tree Classifieres
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+# Import scikit-learn classes: Hyperparameters Validation utility functions.
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import LeavePOut
+from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import validation_curve
+from sklearn.model_selection import learning_curve
+
+# Import scikit-learn classes: model's evaluation step utility functions.
+from sklearn.metrics import accuracy_score 
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import plot_roc_curve
+from sklearn.metrics import roc_curve
+from sklearn.decomposition import PCA, KernelPCA
 
 # =========================================================================== #
 # FUNCTIONS
@@ -297,4 +350,41 @@ def display_cumulative_variance_dataset(X, scaler_method=None):
     
         cum_var_exp_up_to_n_pcs = np.cumsum(pca.explained_variance_ratio_)[n_components-1]
         print(f"Cumulative varation explained up to {n_components} pcs = {cum_var_exp_up_to_n_pcs}")
+    pass
+
+def show_pca_1_vs_pca_2_pcaKernel(X, pca_kernels_list, target_col, dataset, n_components=2):
+    # pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    for ii, kernel in enumerate(pca_kernels_list):
+        plt.figure()
+        model = KernelPCA(n_components=n_components, kernel=kernel)
+        model.fit(X)              
+        X_2D = model.transform(X)
+
+        df = pd.DataFrame()
+        df['PCA1'] = X_2D[:, 0]
+        df['PCA2'] = X_2D[:, 1]
+        df[target_col] = dataset[target_col].values
+
+        sns.lmplot("PCA1", "PCA2", hue=target_col, data=df, fit_reg=False)
+    pass
+
+def show_scatter_plots_pcaKernel(X, pca_kernels_list, target_col, dataset, n_components, dest_dir='figures'):
+    # pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    for ii, kernel in enumerate(pca_kernels_list):
+        plt.figure()
+        model = KernelPCA(n_components=n_components, kernel=kernel)
+        model.fit(X)              
+        X_t = model.transform(X)
+    
+        col_names = list(map(lambda xi: f"PCA{xi+1}", range(n_components)))
+        df = pd.DataFrame(data=X_t, columns=col_names)
+        df[target_col] = dataset[target_col].values
+
+        # sns.lmplot("PCA1", "PCA2", hue=target_col, data=df, fit_reg=False)
+        sns_plot = sns.pairplot(df, hue='T-OR-D', size=1.5)
+        try: os.makedirs(dest_dir)
+        except: pass
+        plot_name = f"scatter_plot_pca_n{n_components}_{kernel}_.png"
+        sns_plot.savefig(os.path.join(dest_dir, plot_name))
+        pass
     pass
