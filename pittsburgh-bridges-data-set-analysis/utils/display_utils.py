@@ -77,7 +77,7 @@ from sklearn.decomposition import PCA, KernelPCA
 # FUNCTIONS
 # =========================================================================== #
 
-def display_heatmap(corr):
+def display_heatmap(corr, dest_figures='figures'):
     '''Dispalyes a heatmap related to the correlation matrix computed for the dataset analysed.'''
     f, ax = plt.subplots(figsize=(10, 8))
     
@@ -112,6 +112,12 @@ def display_heatmap(corr):
         rotation=45,
         horizontalalignment='right'
     )
+    
+    plot_name = 'heatmap_corr_matrix.png'
+    try: os.makedirs(dest_figures)
+    except: pass
+    # heatmap.savefig(os.path.join(dest_figures, plot_name))
+    plt.savefig(os.path.join(dest_figures, plot_name))
 
     plt.show()
     pass
@@ -387,4 +393,37 @@ def show_scatter_plots_pcaKernel(X, pca_kernels_list, target_col, dataset, n_com
         plot_name = f"scatter_plot_pca_n{n_components}_{kernel}_.png"
         sns_plot.savefig(os.path.join(dest_dir, plot_name))
         pass
+    pass
+
+def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None, kind=None, corner=None):
+    dest_figures, plot_name = 'figures', 'res_scatter_plot.png'
+    # res_scatter_plot = sns.pairplot(dataset, hue='T-OR-D', size=1.5)
+    try: os.makedirs(dest_figures)
+    except: pass
+    
+    try:
+        if diag_kind is not None:
+            plt.figure()
+            sns.pairplot(dataset, hue=target_col, size=1.5)
+            # plt.savefig(os.path.join(dest_figures, f"plain_{plot_name}"))
+    except: pass
+
+    try:
+        if diag_kind is not None:
+            plt.figure()
+            sns.pairplot(dataset, diag_kind=diag_kind) # # example: "kde"
+            # plt.savefig(os.path.join(dest_figures, f"{diag_kind}_{plot_name}"))
+    except: pass
+    try:
+        if kind is not None:
+            plt.figure()
+            sns.pairplot(dataset, kind=kind) # example: "reg"
+            # plt.savefig(os.path.join(dest_figures, f"{kind}_{plot_name}"))
+    except: pass
+    try:
+        if corner is not None:
+            plt.figure()
+            sns.pairplot(dataset, corner=True)
+            # plt.savefig(os.path.join(dest_figures, f"corner_{plot_name}"))
+    except: pass
     pass
