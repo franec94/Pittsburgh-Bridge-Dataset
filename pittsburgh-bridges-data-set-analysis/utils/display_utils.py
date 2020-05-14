@@ -395,16 +395,21 @@ def show_scatter_plots_pcaKernel(X, pca_kernels_list, target_col, dataset, n_com
         pass
     pass
 
-def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None, kind=None, corner=None):
+def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None, kind=None, corner=None, gmap_levels=None):
     dest_figures, plot_name = 'figures', 'res_scatter_plot.png'
     # res_scatter_plot = sns.pairplot(dataset, hue='T-OR-D', size=1.5)
     try: os.makedirs(dest_figures)
     except: pass
     
     try:
-        if diag_kind is not None:
+        if target_col is not None:
             plt.figure()
-            sns.pairplot(dataset, hue=target_col, size=1.5)
+            # sns.pairplot(dataset, hue=target_col, size=1.5)
+            sns.pairplot(iris, hue=target_col, palette="Set2", diag_kind="kde", height=2.5)
+            # g = sns.PairGrid(dataset, hue=target_col)
+            # g.map_diag(plt.hist)
+            # g.map_offdiag(plt.scatter)
+            # g.add_legend();
             # plt.savefig(os.path.join(dest_figures, f"plain_{plot_name}"))
     except: pass
 
@@ -426,4 +431,13 @@ def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None,
             sns.pairplot(dataset, corner=True)
             # plt.savefig(os.path.join(dest_figures, f"corner_{plot_name}"))
     except: pass
+    try:
+        if gmap_levels is not None:
+            plt.figure()
+            g = sns.PairGrid(dataset)
+            g.map_diag(sns.kdeplot)
+            g.map_offdiag(sns.kdeplot, n_levels=gmap_levels); # exmaple: n_levels=6
+            plt.savefig(os.path.join(dest_figures, f"gmap_{plot_name}"))
+    except: pass
+
     pass
