@@ -436,8 +436,82 @@ def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None,
             plt.figure()
             g = sns.PairGrid(dataset)
             g.map_diag(sns.kdeplot)
-            g.map_offdiag(sns.kdeplot, n_levels=gmap_levels); # exmaple: n_levels=6
+            g.map_offdiag(sns.kdeplot, n_levels=gmap_levels) # exmaple: n_levels=6
             plt.savefig(os.path.join(dest_figures, f"gmap_{plot_name}"))
     except: pass
 
+    pass
+
+def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None):
+    col_names = dataset.columns
+    col_accs = col_names[0::2]
+    col_stds = col_names[1::2]
+
+    # print(col_names); print(col_accs); print(col_stds);
+
+    plt.figure(figsize=(15, 15))
+    estimator_name = plot_name.split("_")[0]
+    plt.title(f"Learning Curve {estimator_name}")
+    # grid_shape = int(''.join([str(ii) for ii in grid_size]))
+    for ii, (col_acc, col_std) in enumerate(zip(col_accs, col_stds)):
+
+        # plt.subplot(int(f"{grid_shape}{ii+1}"))
+        plt.subplot(grid_size[0], grid_size[1], ii+1)
+        acc_list = dataset[col_acc].values[:n]
+        std_list = dataset[col_std].values[:n]
+        
+        plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
+
+        for ii, (conf_interval, val) in enumerate(zip(std_list, acc_list)):
+            conf_interval = conf_interval[-4:]
+            plt.errorbar(x=ii, y=float(val), yerr=float(conf_interval), color="black", capsize=3,
+                 linestyle="None",
+                 marker="s", markersize=7, mfc="black", mec="black")
+            pass
+        plt.title(col_acc)
+        pass
+
+    #plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25,
+    #                wspace=0.35)
+    try: os.makedirs(plot_dest)
+    except: pass
+    plt.savefig(os.path.join(plot_dest, plot_name))
+    plt.show()
+    pass
+
+def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figures", n=None, col_names=None):
+    df_res = None
+    for df in dataset:
+        if df_res is None: df_res = df[-2:]
+        else: df_res = pd. concat([df_res, df[-2:]], ignore_index=True)
+        pass
+    df_res_2 = None
+    estimator_name, jj = col_names[0], 0
+    names_list = []
+    for ii, row in enumerate(df_res.values):
+        if ii % 2 == 0:
+            estimator_name = col_names[jj]
+            names = [estimator_name + '_loo_acc', estimator_name + '_loo_std']
+        else:
+            names = [estimator_name + '_Stdf_acc', estimator_name + '_Stdf_std']
+            jj = jj + 1
+            
+        names_list.extend(copy.deepcopy(names))
+        acc = pd.Series(row[0::2]) 
+        std = pd.Series(row[1::2]) 
+        tmp_df = pd.concat([acc, std], axis=1, ignore_index=True)
+        # tmp_df = tmp_df.rename(columns=dict(zip(list(tmp_df.columns), names)))
+        if df_res_2 is None: df_res_2 = tmp_df
+        else: df_res_2 = pd.concat([df_res_2, tmp_df], axis=1, ignore_index=True)
+        pass
+    
+    # col_tmp = df_res_2.columns.values.tolist()
+    # return col_tmp
+    # tmp_list = list(itertools.chain.from_iterable(list(zip(col_names, col_names))))
+    # tmp_list = list(itertools.chain.from_iterable(list(zip(tmp_list, tmp_list))))
+    # tmp_list= [f"{col_tmp[ii]}_{xi}_acc" if ii % 2 == 0 else f"{col_tmp[ii+1]}_{xi}_std" for ii, xi in enumerate(tmp_list)]
+    
+    df_res_2 = pd.DataFrame(df_res_2.values, columns=names_list) # df_res_2.rename(columns=dict(zip(df_res_2.columns, tmp_list)))
+    plot_name = 'loo_stdf_learning_curve.png'
+    show_learning_curve(df_res_2, n=df_res_2.shape[0], plot_dest=plot_dest, grid_size=[12, 2], plot_name=plot_name)
     pass
