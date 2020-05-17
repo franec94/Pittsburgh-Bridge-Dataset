@@ -465,7 +465,7 @@ def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=No
             if ii % 2 == 0:
                 plt.figure()
             plt.subplot(1, 2, ii % 2 + 1)
-            plt.title(col_acc)
+            
             acc_list = dataset[col_acc].values[:n]
             std_list = dataset[col_std].values[:n]
         
@@ -479,6 +479,7 @@ def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=No
                 pass
             if ii % 2 != 0:
                 # plt.savefig(os.path.join(plot_dest, plot_name))
+                plt.title(col_acc)
                 plt.show()
         else:
             plt.subplot(grid_size[0], grid_size[1], ii+1)

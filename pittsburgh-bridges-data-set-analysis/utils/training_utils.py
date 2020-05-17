@@ -456,7 +456,7 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
         }
     
     # Run the grid-search technique
-    grid_search_approach('{}_Classifier,MinMax'.format('Random_Forest'), n, clf_random_forest, \
+    grid_search_approach('{}_Classifier, {}'.format('Random_Forest', 'Normalize'), n, clf_random_forest, \
         parmas_random_forest, X, y, \
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)

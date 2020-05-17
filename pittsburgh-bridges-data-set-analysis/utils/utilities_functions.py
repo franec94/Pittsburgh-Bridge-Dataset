@@ -196,8 +196,31 @@ def prepare_output_df(cv_list, pca_kernels_list, data):
     return df
 
 def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
+
     col_names = []
     for kernel in pca_kernels_list:
         col_names = col_names + [f"{kernel} - ACC".lower().capitalize(), f"{kernel} - F1".lower().capitalize()]
     df = pd.DataFrame(data=[data], columns=col_names,  index=[estimator_name])
     return df
+
+# --------------------------------------------------------------------------- #
+# Utilities Functions Custom Stratified Training and Test Set Creation
+# --------------------------------------------------------------------------- #
+
+def get_indices(class_ith_indeces):
+    divisor = len(class_ith_indeces) // 2
+    max_len = max(len(class_ith_indeces) - divisor, divisor)
+    p1a = class_ith_indeces[:max_len]
+    p2a = class_ith_indeces[max_len:]
+    return [p1a, p2a]
+
+def get_data(p_train, p_test, X, y):
+    ytrain_ = [y[ii]for ii in p_train]
+    ytest_ = [y[ii]for ii in p_test]
+    
+    Xtrain_ = [X[ii]for ii in p_train]
+    Xtest_ = [X[ii]for ii in p_test]
+
+    assert len(ytrain_) == len(Xtrain_), f"Train {len(ytrain_)} != {len(Xtrain_)} Test {len(ytest_)} ?? {len(Xtest_)}" 
+    assert len(ytest_) == len(Xtest_),f"Train {len(ytrain_)} ?? {len(Xtrain_)} Test {len(ytest_)} != {len(Xtest_)}" 
+    return Xtrain_, Xtest_, ytrain_, ytest_

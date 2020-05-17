@@ -72,6 +72,7 @@ from sklearn.metrics import roc_curve
 
 from utils.utilities_functions import *
 from utils.cross_validation_custom import *
+from utils.grid_search_custom import *
 
 
 # =========================================================================== #
@@ -570,100 +571,6 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
 # --------------------------------------------------------------------------- #
 # Grid Search Custom
 # --------------------------------------------------------------------------- #
-def grid_search_kfold_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest, title=None):
-    # K-Fold Cross-Validation
-    print()
-    print('-' * 100)
-    print('K-Fold Cross Validation')
-    print('-' * 100)
-    for cv in [3,4,5,10]:
-          
-        print('#' * 50)
-        print('CV={}'.format(cv))
-        print('#' * 50)
-        clf_cloned = sklearn.base.clone(clf)
-        grid = GridSearchCV(
-            estimator=clf_cloned, param_grid=param_grid,
-            cv=cv, verbose=0)
-          
-        grid.fit(Xtrain, ytrain)
-        print()
-        print('[*] Best Params:')
-        pprint(grid.best_params_)
-
-        print()
-        print('[*] Best Estimator:')
-        pprint(grid.best_estimator_)
-
-        print()
-        print('[*] Best Score:')
-        pprint(grid.best_score_)
-          
-        plot_conf_matrix(grid, Xtest, ytest, title)
-        # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
-        plot_roc_curve(grid, Xtest, ytest)
-        pass
-    pass
-
-def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest,title=None):
-    # Stratified-K-Fold Cross-Validation
-    print()
-    print('-' * 100)
-    print('Stratified-K-Fold Cross-Validation')
-    print('-' * 100)
-
-    loo = LeaveOneOut()
-    grid = GridSearchCV(
-        estimator=clf, param_grid=param_grid,
-        cv=loo, verbose=0)
-          
-    grid.fit(Xtrain, ytrain)
-    print()
-    print('[*] Best Params:')
-    pprint(grid.best_params_)
-
-    print()
-    print('[*] Best Estimator:')
-    pprint(grid.best_estimator_)
-
-    print()
-    print('[*] Best Score:')
-    pprint(grid.best_score_)
-          
-    plot_conf_matrix(grid, Xtest, ytest, title)
-    # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
-    plot_roc_curve(grid, Xtest, ytest)
-    pass
-
-def grid_search_stratified_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest, n_splits=3, title=None):
-    # Stratified-K-Fold Cross-Validation
-    print()
-    print('-' * 100)
-    print('Stratified-K-Fold Cross-Validation')
-    print('-' * 100)
-
-    skf = StratifiedKFold(n_splits=n_splits)
-    grid = GridSearchCV(
-        estimator=clf, param_grid=param_grid,
-        cv=skf, verbose=0)
-          
-    grid.fit(Xtrain, ytrain)
-    print()
-    print('[*] Best Params:')
-    pprint(grid.best_params_)
-
-    print()
-    print('[*] Best Estimator:')
-    pprint(grid.best_estimator_)
-
-    print()
-    print('[*] Best Score:')
-    pprint(grid.best_score_)
-          
-    plot_conf_matrix(grid, Xtest, ytest, title)
-    # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
-    plot_roc_curve(grid, Xtest, ytest)
-    pass
 
 def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False):
     
@@ -690,16 +597,8 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
             
             Xtrain_transformed = kernel_pca.transform(Xtrain)
             Xtest_transformed = kernel_pca.transform(Xtest)
-          
 
-            clf_cloned = sklearn.base.clone(estimator)
-            grid_search_kfold_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-          
-            clf_cloned = sklearn.base.clone(estimator)
-            grid_search_loo_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-                      
-            clf_cloned = sklearn.base.clone(estimator)
-            grid_search_stratified_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, n_splits=3, title=title)
+            perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
 
             clf = None
             if show_plots:
@@ -724,3 +623,58 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
             print('-' * 100)
             pprint(errors_list)
         pass
+
+def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, random_state=0, show_plots=False, show_errors=False, verbose=0):
+    debug_var = False
+    for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
+        pprint(estimator_obj.get_params().keys())
+        # return
+        if verbose == 1 and debug_var is True:
+            print()
+            print('=' * 100)
+            # print(ii)
+            # print((estimator_obj, estimator_name))
+            print(estimator_name)
+            # pprint(param_grids[ii])
+            print('=' * 100)
+            pass
+        grid_search_by_n_components(estimator_obj, param_grids[ii], X, y, n_components, estimator_name, random_state=0, show_plots=False, show_errors=False, verbose=verbose)
+    pass
+
+def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, verbose=0):
+    
+    # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
+
+    kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    errors_list = []
+    for kernel in kernels_list:
+        step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
+        try:
+            if verbose == 1:
+                print()
+                print('=' * 100)
+                print(step_msg)
+                print('=' * 100)
+          
+            title = 'n_components={} | kernel={}'.format(n_components, kernel)
+    
+            # Prepare data
+            # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
+
+            # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
+            grid_search_stratified_cross_validation(estimator, param_grid, X, y, n_components=n_components, kernel=kernel, n_splits=2, title=None, verbose=1)
+
+            clf = None
+            if show_plots: pass
+        except Exception as err:
+            err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
+            print(err_msg)
+            errors_list.append(err_msg)
+            pass
+        if show_errors:
+            print('-' * 100)
+            print('Erors')
+            print('-' * 100)
+            pprint(errors_list)
+        pass
+    pass
