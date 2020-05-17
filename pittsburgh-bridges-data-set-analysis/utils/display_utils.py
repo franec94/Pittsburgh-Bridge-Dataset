@@ -442,44 +442,69 @@ def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None,
 
     pass
 
-def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None):
+def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_pairs=False):
+
+    try: os.makedirs(plot_dest)
+    except: pass
+
     col_names = dataset.columns
     col_accs = col_names[0::2]
     col_stds = col_names[1::2]
 
     # print(col_names); print(col_accs); print(col_stds);
 
-    plt.figure(figsize=(15, 15))
+    if show_pairs is False:
+        plt.figure(figsize=figsize)
     estimator_name = plot_name.split("_")[0]
     plt.title(f"Learning Curve {estimator_name}")
     # grid_shape = int(''.join([str(ii) for ii in grid_size]))
     for ii, (col_acc, col_std) in enumerate(zip(col_accs, col_stds)):
 
         # plt.subplot(int(f"{grid_shape}{ii+1}"))
-        plt.subplot(grid_size[0], grid_size[1], ii+1)
-        acc_list = dataset[col_acc].values[:n]
-        std_list = dataset[col_std].values[:n]
+        if show_pairs is True:
+            if ii % 2 == 0:
+                plt.figure()
+            plt.subplot(1, 2, ii % 2 + 1)
+            plt.title(col_acc)
+            acc_list = dataset[col_acc].values[:n]
+            std_list = dataset[col_std].values[:n]
         
-        plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
+            plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
 
-        for ii, (conf_interval, val) in enumerate(zip(std_list, acc_list)):
-            conf_interval = conf_interval[-4:]
-            plt.errorbar(x=ii, y=float(val), yerr=float(conf_interval), color="black", capsize=3,
-                 linestyle="None",
-                 marker="s", markersize=7, mfc="black", mec="black")
-            pass
-        plt.title(col_acc)
+            for jj, (conf_interval, val) in enumerate(zip(std_list, acc_list)):
+                conf_interval = conf_interval[-4:]
+                plt.errorbar(x=jj, y=float(val), yerr=float(conf_interval), color="black", capsize=3,
+                     linestyle="None",
+                    marker="s", markersize=7, mfc="black", mec="black")
+                pass
+            if ii % 2 != 0:
+                # plt.savefig(os.path.join(plot_dest, plot_name))
+                plt.show()
+        else:
+            plt.subplot(grid_size[0], grid_size[1], ii+1)
+            plt.title(col_acc)
+            acc_list = dataset[col_acc].values[:n]
+            std_list = dataset[col_std].values[:n]
+        
+            plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
+
+            for jj, (conf_interval, val) in enumerate(zip(std_list, acc_list)):
+                conf_interval = conf_interval[-4:]
+                plt.errorbar(x=jj, y=float(val), yerr=float(conf_interval), color="black", capsize=3,
+                     linestyle="None",
+                    marker="s", markersize=7, mfc="black", mec="black")
+                pass
         pass
 
     #plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25,
     #                wspace=0.35)
-    try: os.makedirs(plot_dest)
-    except: pass
-    plt.savefig(os.path.join(plot_dest, plot_name))
-    plt.show()
+
+    if show_pairs is True:
+        plt.savefig(os.path.join(plot_dest, plot_name))
+        plt.show()
     pass
 
-def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figures", n=None, col_names=None):
+def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figures", n=None, col_names=None, figsize=(10, 10), show_pairs=False):
     df_res = None
     for df in dataset:
         if df_res is None: df_res = df[-2:]
@@ -513,5 +538,5 @@ def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figur
     
     df_res_2 = pd.DataFrame(df_res_2.values, columns=names_list) # df_res_2.rename(columns=dict(zip(df_res_2.columns, tmp_list)))
     plot_name = 'loo_stdf_learning_curve.png'
-    show_learning_curve(df_res_2, n=df_res_2.shape[0], plot_dest=plot_dest, grid_size=[12, 2], plot_name=plot_name)
+    show_learning_curve(df_res_2, n=df_res_2.shape[0], plot_dest=plot_dest, grid_size=[12, 2], plot_name=plot_name, figsize=figsize, show_pairs=show_pairs)
     pass
