@@ -483,8 +483,9 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 # --------------------------------------------------------------------------- #
 def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0):
     dfs_list = []
+    df = None
     for _, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
-        res_df = fit_by_n_components(
+        res_df1, res_df2 = fit_by_n_components(
             estimator=estimator_obj, \
             X=X, \
             y=y, \
@@ -494,12 +495,17 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             cv_list=cv_list,
             pca_kernels_list=pca_kernels_list,
             show_plots=show_plots)
-        dfs_list.append(res_df)
-    return dfs_list
+        dfs_list.append(res_df1)
+        if df is None:
+            df = res_df2
+        else:
+            df = pd.concat([df,res_df2])
+    return dfs_list, df
 
 def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0):
     
     data = []
+    data_fit_strf = []
     
     # print(pca_kernels_list)
     
@@ -526,29 +532,18 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
             # Prepare data
             Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
 
-            # Perform standard CV
-            clf_cloned = sklearn.base.clone(estimator)
-            # res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose, cv_list=cv_list)
-
-            # Perform LOOCV
-            clf_cloned = sklearn.base.clone(estimator)
-            # res_loo = loo_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
-            
-            # Perform Stratified Cross Validation
-            clf_cloned = sklearn.base.clone(estimator)
-            # res_sscv = stratified_cross_validation(clf_cloned, Xtrain, ytrain, n_splits=3, verbose=verbose)
+            # Perform CV, LOOCV, Stratified CV
+            # Once gotten all results exploit them to fill data object list
+            # used later to fill in a result dataframe
+            data = perform_cv_techniques(data, estimator, Xtrain, Xtrain_transformed, ytrain, cv_list, verbose=0)
 
             # Perform standard fit and evaluate
             # clf_cloned = sklearn.base.clone(estimator)
             # clf = fit(clf_cloned, Xtrain_transformed, ytrain, Xtest_transformed, ytest, verbose=verbose)
             
             clf_cloned = sklearn.base.clone(estimator)
-            _ = fit_strfd(kernel, n_components, clf_cloned, X, y, n_splits=2, verbose=1)
-            return None
-
-            # Once gotten all results exploit them to fill data object list
-            # used later to fill in a result dataframe
-            data = add_records(data, cv_list, res_kf, res_loo, res_sscv)
+            clf_cloned.probability=True
+            data_fit_strf = fit_strfd(data_fit_strf, kernel, n_components, clf_cloned, X, y, n_splits=2, verbose=0)
             
             if show_plots:
                 # show_plots_fit_by_n(clf, kernel, n_components, Xtest_transformed, ytest)
@@ -568,8 +563,9 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
         pass
 
     # Create and return a dataframe object
-    df = prepare_output_df(cv_list, pca_kernels_list, data)
-    return df
+    df1 = prepare_output_df(cv_list, pca_kernels_list, data)
+    df2 = prepare_output_df_baseline_fit(pca_kernels_list, data_fit_strf, clf_type)
+    return df1, df2
 
 # --------------------------------------------------------------------------- #
 # Grid Search Custom

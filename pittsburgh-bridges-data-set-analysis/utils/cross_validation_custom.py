@@ -40,6 +40,7 @@ from sklearn.model_selection import GridSearchCV
 # After Training Analysis Imports
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
+from sklearn.metrics import f1_score
 
 # Classifiers Imports
 # SVMs Classifieres
@@ -72,6 +73,24 @@ from sklearn.metrics import roc_curve
 
 from utils.utilities_functions import *
 
+def perform_cv_techniques(data, estimator, Xtrain, Xtrain_transformed, ytrain, cv_list, verbose=0):
+    # Perform standard CV
+    clf_cloned = sklearn.base.clone(estimator)
+    res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose, cv_list=cv_list)
+
+    # Perform LOOCV
+    clf_cloned = sklearn.base.clone(estimator)
+    res_loo = loo_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
+            
+    # Perform Stratified Cross Validation
+    clf_cloned = sklearn.base.clone(estimator)
+    res_sscv = stratified_cross_validation(clf_cloned, Xtrain, ytrain, n_splits=3, verbose=verbose)
+
+    data = add_records(data, cv_list, res_kf, res_loo, res_sscv)
+
+    return data
+
+
 # --------------------------------------------------------------------------- #
 # Cross Validation Custom
 # --------------------------------------------------------------------------- #
@@ -88,7 +107,8 @@ def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=
         clf_cloned = sklearn.base.clone(clf)
         scores = cross_val_score(clf_cloned, Xtrain, ytrain, cv=cv)
         if verbose == 1:
-            print("CV=%d | Accuracy: %0.2f (+/- %0.2f)" % (cv, scores.mean(), scores.std() * 2))
+            # print("CV=%d | Accuracy: %0.2f (+/- %0.2f)" % (cv, scores.mean(), scores.std() * 2))
+            print("CV=%d | Accuracy: %0.2f (+/- %0.2f)" % (cv, scores.mean(), scores.std()))
         res.append([cv, scores.mean(), scores.std() * 2, scores])
     return res
 
@@ -101,7 +121,8 @@ def loo_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0)
         print('-' * 100)
     scores = cross_val_score(clf, Xtrain, ytrain, cv=LeaveOneOut())
     if verbose == 1:
-        print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+        # print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+        print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
     return (scores.mean(), scores.std() * 2, scores)
 
 def stratified_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, n_splits=3, verbose=0):
@@ -114,7 +135,8 @@ def stratified_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, n_s
     skf = StratifiedKFold(n_splits=n_splits)
     scores = cross_val_score(clf, Xtrain, ytrain, cv=skf)
     if verbose == 1:
-        print("Accuracy: %0.2f (+/- %0.2f) | Accuracy Test:" % (scores.mean(), scores.std() * 2))
+        # print("Accuracy: %0.2f (+/- %0.2f) | Accuracy Test:" % (scores.mean(), scores.std() * 2))
+        print("Accuracy: %0.2f (+/- %0.2f) | Accuracy Test:" % (scores.mean(), scores.std()))
     return (scores.mean(), scores.std() * 2, scores)
 
 def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
@@ -130,7 +152,7 @@ def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
         print(f"accuracy score (percentage): {accuracy_score(ytest, y_model)*100:.2f}%")
     return clf
 
-def fit_strfd(kernel, n_components, clf, X, y, n_splits=2, verbose=0):
+def fit_strfd(data_fit_strf, kernel, n_components, clf, X, y, n_splits=2, verbose=0, show_plot=False):
     if verbose == 1:
         print()
         print('-' * 100)
@@ -152,7 +174,7 @@ def fit_strfd(kernel, n_components, clf, X, y, n_splits=2, verbose=0):
     Xtrain_, Xtest_, ytrain_, ytest_ = get_data(p_train, p_test, X, y)
 
     # Prepare data
-    Xtrain_transformed_, Xtest_transformed_ = KernelPCA_transform_data(n_components, kernel, Xtrain_, Xtest_, verbose=1)
+    Xtrain_transformed_, Xtest_transformed_ = KernelPCA_transform_data(n_components, kernel, Xtrain_, Xtest_, verbose=0)
 
     # Fit and Predict
     if verbose == 1:
@@ -170,8 +192,13 @@ def fit_strfd(kernel, n_components, clf, X, y, n_splits=2, verbose=0):
         print('accuracy score:', accuracy_score(ytest_, y_model))
         print(f"accuracy score (percentage): {accuracy_score(ytest_, y_model)*100:.2f}%")
 
-    show_plots_fit_by_n(clf, kernel, n_components, Xtest_transformed_, ytest_)
-    return (clf, (Xtrain_transformed_, ytrain_), (Xtest_transformed_, ytest_))
+    acc = "%.2f" % (accuracy_score(ytest_, y_model),)
+    f1 = "%.2f" %(f1_score(ytest_, y_model, average='macro'), )
+    if show_plot is True:
+        show_plots_fit_by_n(clf, kernel, n_components, Xtest_transformed_, ytest_)
+    # return (clf, acc, (Xtrain_transformed_, ytrain_), (Xtest_transformed_, ytest_))
+    data_fit_strf.extend([acc, f1])
+    return data_fit_strf
 
 # --------------------------------------------------------------------------- #
 # Utilities Functions Custom

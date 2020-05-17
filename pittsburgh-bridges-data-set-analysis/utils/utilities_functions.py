@@ -78,13 +78,13 @@ def plot_conf_matrix(model, Xtest, ytest, title=None):
     y_model = model.predict(Xtest)
     mat = confusion_matrix(ytest, y_model)
     
-    plt.figure()
+    fig = plt.figure()
     sns.heatmap(mat, square=True, annot=True, cbar=False)
     plt.xlabel('predicted value')
     plt.ylabel('true value')
     if title:
         plt.title(title)
-    pass
+    return fig
 
 def plot_roc_curve_custom(model, X_test, y_test, label, title=None):
     
@@ -100,7 +100,7 @@ def plot_roc_curve_custom(model, X_test, y_test, label, title=None):
     y_pred = np.argmax(y_pred, axis=1)
     fpr, tpr, _ = roc_curve(y_test, y_pred)
     
-    plt.figure()
+    fig = plt.figure()
     plt.plot(fpr, tpr, label=label)
     plt.plot([0, 1], [0, 1], 'k--')
     
@@ -111,8 +111,8 @@ def plot_roc_curve_custom(model, X_test, y_test, label, title=None):
     else:
         plt.title('ROC curve')
     plt.legend(loc='best')
-    plt.show()
-    pass
+    # plt.show()
+    return fig
 
 def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
     # Shos some plots if 'show_plot' flag is valued as True
@@ -195,4 +195,9 @@ def prepare_output_df(cv_list, pca_kernels_list, data):
     df = pd.DataFrame(data=data, columns=col_names,  index=idx_names)
     return df
 
-    
+def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
+    col_names = []
+    for kernel in pca_kernels_list:
+        col_names = col_names + [f"{kernel} - ACC".lower().capitalize(), f"{kernel} - F1".lower().capitalize()]
+    df = pd.DataFrame(data=[data], columns=col_names,  index=[estimator_name])
+    return df
