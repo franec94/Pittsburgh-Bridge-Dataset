@@ -73,7 +73,7 @@ from sklearn.metrics import roc_curve
 # --------------------------------------------------------------------------- #
 # Confusion Matirx & Roc Curve Custom
 # --------------------------------------------------------------------------- #
-def plot_conf_matrix(model, Xtest, ytest, title=None):
+def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png"):
     
     y_model = model.predict(Xtest)
     mat = confusion_matrix(ytest, y_model)
@@ -84,9 +84,12 @@ def plot_conf_matrix(model, Xtest, ytest, title=None):
     plt.ylabel('true value')
     if title:
         plt.title(title)
-    return fig
+    plt.savefig(plot_name)
+    pass
 
-def plot_roc_curve_custom(model, X_test, y_test, label, title=None):
+def plot_roc_curve_custom(model,
+    X_test, y_test,
+    label=None, title=None, plot_name="roc_curve.png"):
     
     y_pred = model.predict_proba(X_test)
     # print('y_test', type(y_test)); print('y_pred', type(y_pred));
@@ -99,20 +102,22 @@ def plot_roc_curve_custom(model, X_test, y_test, label, title=None):
     
     y_pred = np.argmax(y_pred, axis=1)
     fpr, tpr, _ = roc_curve(y_test, y_pred)
+    roc_auc = auc(fpr, tpr)
     
     fig = plt.figure()
-    plt.plot(fpr, tpr, label=label)
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
     plt.plot([0, 1], [0, 1], 'k--')
     
     plt.xlabel('False positive rate')
     plt.ylabel('True positive rate')
     if  title:
-        plt.title('ROC curve: '.format(title))
+        plt.title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
     else:
         plt.title('ROC curve')
-    plt.legend(loc='best')
+    # plt.legend(loc='best')
+    plt.savefig(plot_name)
     # plt.show()
-    return fig
+    pass
 
 def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
     # Shos some plots if 'show_plot' flag is valued as True
@@ -202,6 +207,21 @@ def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
         col_names = col_names + [f"{kernel} - ACC".lower().capitalize(), f"{kernel} - F1".lower().capitalize()]
     df = pd.DataFrame(data=[data], columns=col_names,  index=[estimator_name])
     return df
+
+def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
+    data = []
+
+    for _, a_grid_search in enumerate(grid_searchs):
+        tmp_res = []
+        for _, (a_grid, _) in enumerate(a_grid_search):
+            tmp_res.append("%.2f" % (a_grid.best_score_,))
+            pass
+        data.append(tmp_res)
+        pass
+    col_names = [f'{k} Acc' for k in pca_kernels]
+    df = pd.DataFrame(data=data, columns=col_names,  index=estimator_names)
+    return df
+
 
 # --------------------------------------------------------------------------- #
 # Utilities Functions Custom Stratified Training and Test Set Creation

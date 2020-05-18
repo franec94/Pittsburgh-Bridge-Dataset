@@ -310,7 +310,7 @@ def show_histograms_from_heatmap_corr_matrix(corr_matrix, num_rows=None, row_nam
         pass
     pass
 
-def show_categorical_predictor_values(df, columns_2_avoid=None):
+def show_categorical_predictor_values(df, columns_2_avoid=None, verbose=0):
     
     if columns_2_avoid is not None:
         columns_2_keep = list(filter(lambda x: x not in columns_2_avoid, df.columns))
@@ -325,7 +325,8 @@ def show_categorical_predictor_values(df, columns_2_avoid=None):
         # print(index, predictor)
         labels = df[predictor].astype('category').cat.categories.tolist()
         # pprint.pprint(predictor, labels)
-        print(f"%-{max_len_name}s" % (predictor,), ':', labels)
+        if verbose == 1:
+            print(f"%-{max_len_name}s" % (predictor,), ':', labels)
         if '?' in labels:
             list_columns.append(predictor)
 

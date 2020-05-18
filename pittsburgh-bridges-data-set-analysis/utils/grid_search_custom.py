@@ -8,6 +8,8 @@ import pandas as pd   # Load the Pandas library with alias 'pd'
 import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns' 
 
 import copy
+import os
+import sys
 from scipy import stats
 from scipy import interp
 from itertools import islice
@@ -150,7 +152,7 @@ def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, yte
     plot_roc_curve(grid, Xtest, ytest)
     pass
 
-def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False):
+def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures"):
     # Stratified-K-Fold Cross-Validation
     if verbose == 1:
         print()
@@ -179,6 +181,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     # skf = StratifiedKFold(n_splits=n_splits)
     grid = GridSearchCV(
         estimator=clf, param_grid=param_grid,
+        # scoring=['accuracy', 'f1'],
         verbose=0) # cv=skf, verbose=0)
      
     grid.fit(Xtrain_transformed_, ytrain_)
@@ -197,8 +200,10 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         pass
     
     if show_figures is True:
-        plot_conf_matrix(grid, Xtest_transformed_, ytest_, title)
-        # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
-        plot_roc_curve(grid, Xtest_transformed_, ytest_)
+        conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
+        plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name)
+
+        roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
+        plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name)
         pass
-    pass
+    return grid

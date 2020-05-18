@@ -482,9 +482,17 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 # --------------------------------------------------------------------------- #
 # Training Custom
 # --------------------------------------------------------------------------- #
-def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0):
+def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
     dfs_list = []
     df = None
+
+    plot_dest_list = []
+    for ii, estimator_name in enumerate(estimators_names[-3:]):
+        plot_dest_list.append(os.path.join(plot_dest, estimator_name))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+
     for _, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         res_df1, res_df2 = fit_by_n_components(
             estimator=estimator_obj, \
@@ -495,7 +503,8 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             verbose=verbose,
             cv_list=cv_list,
             pca_kernels_list=pca_kernels_list,
-            show_plots=show_plots)
+            show_plots=show_plots,
+            plot_dest=plot_dest_list[ii])
         dfs_list.append(res_df1)
         if df is None:
             df = res_df2
@@ -503,7 +512,7 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             df = pd.concat([df,res_df2])
     return dfs_list, df
 
-def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0):
+def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
     
     data = []
     data_fit_strf = []
@@ -513,6 +522,17 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
     Xtrain, Xtest, ytrain, ytest = train_test_split(
         X, y,
         random_state=random_state)
+
+    kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    errors_list = []
+
+    plot_dest_list = []
+    for ii, kernel in enumerate(kernels_list):
+        plot_dest_list.append(os.path.join(plot_dest, kernel))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+
 
     if pca_kernels_list is None:
         pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
@@ -624,30 +644,49 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
             pprint(errors_list)
         pass
 
-def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, random_state=0, show_plots=False, show_errors=False, verbose=0):
-    debug_var = False
+def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False):
+    # debug_var = False
+    plot_dest_list = []
+    grid_res_list = []
+
+    if pca_kernels_list is None:
+        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+
+    for ii, estimator_name in enumerate(estimators_names[:]):
+        plot_dest_list.append(os.path.join(plot_dest, estimator_name))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
     for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
-        pprint(estimator_obj.get_params().keys())
-        # return
+        # pprint(estimator_obj.get_params().keys())
         if verbose == 1 and debug_var is True:
             print()
             print('=' * 100)
-            # print(ii)
-            # print((estimator_obj, estimator_name))
             print(estimator_name)
-            # pprint(param_grids[ii])
             print('=' * 100)
             pass
-        grid_search_by_n_components(estimator_obj, param_grids[ii], X, y, n_components, estimator_name, random_state=0, show_plots=False, show_errors=False, verbose=verbose)
-    pass
+        if debug_var is False:
+            grid_res = grid_search_by_n_components(estimator_obj, param_grids[ii], X, y, n_components, estimator_name, kernels_list=pca_kernels_list, random_state=0, show_plots=False, show_errors=False, verbose=verbose, plot_dest=plot_dest_list[ii], estimator_name=estimator_name)
+            grid_res_list.append(grid_res)
+    df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names)
+    return df_grid_searches
 
-def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, verbose=0):
-    
+def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None):
     # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
 
-    kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    if kernels_list is None:
+        kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
     errors_list = []
-    for kernel in kernels_list:
+    grid_list = []
+
+    plot_dest_list = []
+    for ii, kernel in enumerate(kernels_list):
+        plot_dest_list.append(os.path.join(plot_dest, kernel))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+
+    for ii, kernel in enumerate(kernels_list):
         step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
         try:
             if verbose == 1:
@@ -656,16 +695,25 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
                 print(step_msg)
                 print('=' * 100)
           
-            title = 'n_components={} | kernel={}'.format(n_components, kernel)
+            if estimator_name is not None:
+                title = '{} | n_components={} | (PCA) kernel={}'.format(estimator_name, n_components, kernel)
+            else:
+                title = 'n_components={} | (PCA) kernel={}'.format(n_components, kernel)
     
             # Prepare data
             # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
 
             # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-            grid_search_stratified_cross_validation(estimator, param_grid, X, y, n_components=n_components, kernel=kernel, n_splits=2, title=None, verbose=1)
+            res_grid = grid_search_stratified_cross_validation(
+                estimator, param_grid,
+                X, y,
+                n_components=n_components, kernel=kernel, n_splits=2,
+                title=title, show_figures=True,
+                plot_dest=plot_dest_list[ii],
+                verbose=verbose)
+            grid_list.append((res_grid, kernel))
 
-            clf = None
-            if show_plots: pass
+            # if show_plots: pass
         except Exception as err:
             err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
             print(err_msg)
@@ -677,4 +725,5 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
             print('-' * 100)
             pprint(errors_list)
         pass
-    pass
+    
+    return grid_list
