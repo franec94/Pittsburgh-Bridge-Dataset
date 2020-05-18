@@ -1,4 +1,5 @@
-[   {
+[   
+    {
         "title": "How to use Grid Search CV in sklearn, Keras, XGBoost, LightGBM in Python",
         "link": "https://mlfromscratch.com/gridsearch-keras-sklearn/",
         "categories": ["Machine Learning"]
