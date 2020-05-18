@@ -210,18 +210,23 @@ def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
     return df
 
 def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
-    data = []
+    data, data_auc = [], []
 
     for _, a_grid_search in enumerate(grid_searchs):
-        tmp_res = []
-        for _, (a_grid, _) in enumerate(a_grid_search):
+        tmp_res,tmp_auc = [], []
+        for _, (a_grid, _, auc) in enumerate(a_grid_search):
             tmp_res.append("%.2f" % (a_grid.best_score_,))
+            tmp_auc.append("%.2f" % (auc,))
             pass
         data.append(tmp_res)
+        data_auc.append(tmp_auc)
         pass
     col_names = [f'{k} Acc' for k in pca_kernels]
     df = pd.DataFrame(data=data, columns=col_names,  index=estimator_names)
-    return df
+    
+    col_names = [f'{k} AUC' for k in pca_kernels]
+    df_auc = pd.DataFrame(data=data_auc, columns=col_names,  index=estimator_names)
+    return df, df_auc
 
 
 # --------------------------------------------------------------------------- #

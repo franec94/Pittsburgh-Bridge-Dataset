@@ -182,9 +182,10 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     # skf = StratifiedKFold(n_splits=n_splits)
     # scores = ['precision', 'recall', 'f1']
     scores = ['accuracy']
+    grid = None
     for score in scores:
-        print("# Tuning hyper-parameters for %s" % score)
-        print()
+        # print("# Tuning hyper-parameters for %s" % score)
+        # print()
         grid = GridSearchCV(
             estimator=clf, param_grid=param_grid,
             # scoring=['accuracy', 'f1'],

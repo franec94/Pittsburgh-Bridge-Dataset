@@ -483,8 +483,14 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 # Training Custom
 # --------------------------------------------------------------------------- #
 def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
-    dfs_list = []
-    df = None
+    dfs_list, df = [], None
+
+    if type(estimators_list) is not list:
+        estimators_list = [estimators_list]
+    if type(param_grids) is not list:
+        param_grids = [param_grids]
+    if type(estimators_names) is not list:
+        estimators_names = [estimators_names]
 
     plot_dest_list = []
     for ii, estimator_name in enumerate(estimators_names[-3:]):
@@ -648,6 +654,13 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
     # debug_var = False
     plot_dest_list = []
     grid_res_list = []
+
+    if type(estimators_list) is not list:
+        estimators_list = [estimators_list]
+    if type(param_grids) is not list:
+        param_grids = [param_grids]
+    if type(estimators_names) is not list:
+        estimators_names = [estimators_names]
 
     if pca_kernels_list is None:
         pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
