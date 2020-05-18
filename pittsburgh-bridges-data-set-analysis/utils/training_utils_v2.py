@@ -704,14 +704,14 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
             # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
 
             # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-            res_grid = grid_search_stratified_cross_validation(
+            res_grid, auc = grid_search_stratified_cross_validation(
                 estimator, param_grid,
                 X, y,
                 n_components=n_components, kernel=kernel, n_splits=2,
                 title=title, show_figures=True,
                 plot_dest=plot_dest_list[ii],
                 verbose=verbose)
-            grid_list.append((res_grid, kernel))
+            grid_list.append((res_grid, kernel, auc))
 
             # if show_plots: pass
         except Exception as err:

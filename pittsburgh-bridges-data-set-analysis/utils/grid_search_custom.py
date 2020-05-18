@@ -204,6 +204,6 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name)
 
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-        plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name)
+        auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name)
         pass
-    return grid
+    return grid, auc

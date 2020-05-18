@@ -117,7 +117,7 @@ def plot_roc_curve_custom(model,
     # plt.legend(loc='best')
     plt.savefig(plot_name)
     # plt.show()
-    pass
+    return roc_auc
 
 def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
     # Shos some plots if 'show_plot' flag is valued as True
