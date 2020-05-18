@@ -69,6 +69,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_roc_curve
 from sklearn.metrics import roc_curve
+from sklearn.metrics import classification_report
 
 # --------------------------------------------------------------------------- #
 # Confusion Matirx & Roc Curve Custom

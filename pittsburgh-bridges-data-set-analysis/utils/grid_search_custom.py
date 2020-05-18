@@ -72,6 +72,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_roc_curve
 from sklearn.metrics import roc_curve
+from sklearn.metrics import classification_report
 
 from utils.utilities_functions import *
 
@@ -179,24 +180,46 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     
 
     # skf = StratifiedKFold(n_splits=n_splits)
-    grid = GridSearchCV(
-        estimator=clf, param_grid=param_grid,
-        # scoring=['accuracy', 'f1'],
-        verbose=0) # cv=skf, verbose=0)
-     
-    grid.fit(Xtrain_transformed_, ytrain_)
-    if verbose == 1:
+    # scores = ['precision', 'recall', 'f1']
+    scores = ['accuracy']
+    for score in scores:
+        print("# Tuning hyper-parameters for %s" % score)
         print()
-        print('[*] Best Params:')
-        pprint(grid.best_params_)
+        grid = GridSearchCV(
+            estimator=clf, param_grid=param_grid,
+            # scoring=['accuracy', 'f1'],
+            # scoring='%s_macro' % score,
+            # scoring='%s_macro' % score,
+            verbose=0) # cv=skf, verbose=0)
 
-        print()
-        print('[*] Best Estimator:')
-        pprint(grid.best_estimator_)
+        grid.fit(Xtrain_transformed_, ytrain_)
+        if verbose == 1:
+            print()
+            print('[*] Best Params:')
+            pprint(grid.best_params_)
 
+            print()
+            print('[*] Best Estimator:')
+            pprint(grid.best_estimator_)
+
+            print()
+            print('[*] Best Score:')
+            pprint(grid.best_score_)
+            pass
+        print("Grid scores on development set:")
         print()
-        print('[*] Best Score:')
-        pprint(grid.best_score_)
+
+        try:
+            means = grid.cv_results_['mean_test_score']
+            stds = grid.cv_results_['std_test_score']
+            for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+                print("%0.3f (+/-%0.03f) for %r"
+                      % (mean, std * 2, params))
+            print()
+        except: pass
+        y_true, y_pred = ytest_, grid.predict(Xtest_transformed_)
+        print(classification_report(y_true, y_pred))
+        print()
         pass
     
     if show_figures is True:
@@ -207,3 +230,8 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name)
         pass
     return grid, auc
+
+# =============================================================================================== #
+# Web site links
+# =============================================================================================== #
+# https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html
