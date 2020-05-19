@@ -6,19 +6,19 @@ print(__doc__)
 
 # Imports through 'from' syntax
 # --------------------------------------------------------------------------- #
-from itertools import islice;
-from pprint import pprint;
-from sklearn import preprocessing;
+from itertools import islice
+from pprint import pprint
+from sklearn import preprocessing
 
 # Standard Imports
 # --------------------------------------------------------------------------- #
-import copy; import os;
-import sys; import shutil;
-import time;
+import copy; import os
+import sys; import shutil
+import time
 
 # Imports through 'as' syntax
 # --------------------------------------------------------------------------- #
-import numpy as np; import pandas as pd;
+import numpy as np; import pandas as pd
 
 # Imports for graphics
 # --------------------------------------------------------------------------- #
@@ -59,7 +59,8 @@ def linear_regression_custom(X, y, test_size=0.33, random_state=42, randomize_da
     if len(X.shape) == 1:
         X = X[:, np.newaxis]
     
-    X_train, X_test, y_train, y_test = train_test_split(
+    # X_train, X_test, y_train, y_test = train_test_split(
+    X_train, X_test, y_train, _ = train_test_split( 
         X, y, test_size=test_size, random_state=random_state)
     
     classifiers = dict(ols=linear_model.LinearRegression(),
@@ -129,7 +130,7 @@ def classifier_comparison(X, y):
         linearly_separable
     ]
 
-    figure = plt.figure(figsize=(27, 9))
+    _ = plt.figure(figsize=(27, 9)) # figure
     i = 1
     # iterate over datasets
     for ds_cnt, ds in enumerate(datasets):

@@ -6,21 +6,21 @@ print(__doc__)
 
 # Imports through 'from' syntax
 # --------------------------------------------------------------------------- #
-from itertools import islice;
-from pprint import pprint;
-from sklearn import preprocessing;
+from itertools import islice
+from pprint import pprint
+from sklearn import preprocessing
 
 
 # Standard Imports
 # --------------------------------------------------------------------------- #
-import copy; import os;
-import sys; import shutil;
-import time;
+import copy; import os
+import sys; import shutil
+import time
 
 
 # Imports through 'as' syntax
 # --------------------------------------------------------------------------- #
-import numpy as np; import pandas as pd;
+import numpy as np; import pandas as pd
 
 # Matplotlib pyplot provides plotting API
 import matplotlib as mpl
@@ -54,7 +54,7 @@ def dir_traversal_by_os_walk(root_dir_path: str, verbose: int = 0, filter_access
                 or os.access(a_file, os.W_OK) \
                 or os.access(a_file, os.X_OK))
         res = []
-        for ii, (root, dirs, files) in enumerate(resources_list):
+        for _, (root, dirs, files) in enumerate(resources_list):
             files_tmp = list(filter(check_permission_file, files))
             res.append((root, dirs, files_tmp))
             pass
@@ -76,7 +76,7 @@ def get_df_from_list_of_os_walk(resources_list: list, columns="root,dirs,files,f
     data: list = list()
     if type(columns) is not list:
         columns = columns.split(",")
-    for _, (root, dirs, files) in enumerate(resources_list):
+    for _, (root, _, files) in enumerate(resources_list): # (root, dirs, files)
         for _, a_file in enumerate(files):
             a_record: list = [root, os.path.dirname(a_file), os.path.basename(a_file), os.path.getsize(os.path.join(root, a_file))]
             data.append(a_record)
@@ -202,8 +202,8 @@ def show_pie_by_variable_from_df(df: pd.DataFrame, variable_name: str, save_fig=
     
     check_and_create_dirs(dest_fig)
     
-    labels_list = "title,ylabel,xlabel".split(",")
-    values_list = "Pie,Y,X".split(",")
+    # labels_list = "title,ylabel,xlabel".split(",")
+    # values_list = "Pie,Y,X".split(",")
 
     predictor = df[f"{variable_name}"].value_counts()
     tmp_df = pd.DataFrame(data=predictor.values, columns=[f"{variable_name}"], index=predictor.index)
@@ -214,7 +214,7 @@ def show_pie_by_variable_from_df(df: pd.DataFrame, variable_name: str, save_fig=
         pass
     
     if save_fig is True:
-        ax.savefig(os.path.join(dest_fig, fig_name))
+        plt.savefig(os.path.join(dest_fig, fig_name))
         pass
     pass
 
@@ -242,15 +242,9 @@ def set_meta_data_img_hist(ax, meta_data_img:dict, labels_list: list, values_lis
 
     for ii, label_img in enumerate(labels_list):
         if label_img not in meta_data_img.keys():
-            meta_data_img[f"{label_img}"] = value_list[ii]
+            meta_data_img[f"{label_img}"] = values_list[ii]
         pass
     ax.set_title('{}'.format(meta_data_img["title"]))
     ax.set_ylabel('{}'.format(meta_data_img["ylabel"]))
     ax.set_xlabel('{}'.format(meta_data_img["xlabel"]))
     pass
-
-def rescale_data_by_technique(data, technique_name: str, techniques_list) -> object:
-    
-        
-    
-    return pred_rescaled
