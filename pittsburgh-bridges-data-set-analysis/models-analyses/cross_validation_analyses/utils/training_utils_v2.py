@@ -1,9 +1,7 @@
-# =========================================================================== #
-# IMPORTS
-# =========================================================================== #
+import sklearn
+from pprint import pprint
 
 # Standard Imports (Data Manipulation and Graphics)
-# --------------------------------------------------------------------------- #
 import numpy as np    # Load the Numpy library with alias 'np' 
 import pandas as pd   # Load the Pandas library with alias 'pd' 
 
@@ -12,18 +10,19 @@ import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns'
 import copy
 from scipy import stats
 from scipy import interp
+from itertools import islice
+import itertools
 
 # Matplotlib pyplot provides plotting API
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 
-# Sklearn Imports
-# --------------------------------------------------------------------------- #
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
+from sklearn.decomposition import KernelPCA
 from sklearn.model_selection import train_test_split
 
 from sklearn.preprocessing import MinMaxScaler
@@ -56,6 +55,24 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import RandomForestClassifier
+
+# Import scikit-learn classes: Hyperparameters Validation utility functions.
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import LeavePOut
+from sklearn.model_selection import LeaveOneOut
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import validation_curve
+from sklearn.model_selection import learning_curve
+
+# Import scikit-learn classes: model's evaluation step utility functions.
+from sklearn.metrics import accuracy_score 
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import plot_roc_curve
+from sklearn.metrics import roc_curve
+
+from utils.utilities_functions import *
+from utils.cross_validation_custom import *
+from utils.grid_search_custom import *
 
 
 # =========================================================================== #
@@ -287,7 +304,6 @@ def plot_roc_crossval(X, y):
     plt.show()
     pass
 
-
 # --------------------------------------------------------------------------- #
 # Classifiers
 # --------------------------------------------------------------------------- #
@@ -456,8 +472,271 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
         }
     
     # Run the grid-search technique
-    grid_search_approach('{}_Classifier, {}'.format('Random_Forest', 'Normalize'), n, clf_random_forest, \
+    grid_search_approach('{}_Classifier,MinMax'.format('Random_Forest'), n, clf_random_forest, \
         parmas_random_forest, X, y, \
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)
     pass
+
+
+# --------------------------------------------------------------------------- #
+# Training Custom
+# --------------------------------------------------------------------------- #
+def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
+    dfs_list, df = [], None
+
+    if type(estimators_list) is not list:
+        estimators_list = [estimators_list]
+    if type(param_grids) is not list:
+        param_grids = [param_grids]
+    if type(estimators_names) is not list:
+        estimators_names = [estimators_names]
+
+    plot_dest_list = []
+    for ii, estimator_name in enumerate(estimators_names[-3:]):
+        plot_dest_list.append(os.path.join(plot_dest, estimator_name))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+
+    for _, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
+        res_df1, res_df2 = fit_by_n_components(
+            estimator=estimator_obj, \
+            X=X, \
+            y=y, \
+            n_components=n_components, \
+            clf_type=f"{estimator_name}", \
+            verbose=verbose,
+            cv_list=cv_list,
+            pca_kernels_list=pca_kernels_list,
+            show_plots=show_plots,
+            plot_dest=plot_dest_list[ii])
+        dfs_list.append(res_df1)
+        if df is None:
+            df = res_df2
+        else:
+            df = pd.concat([df,res_df2])
+    return dfs_list, df
+
+def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
+    
+    data = []
+    data_fit_strf = []
+    
+    # print(pca_kernels_list)
+    
+    Xtrain, Xtest, ytrain, ytest = train_test_split(
+        X, y,
+        random_state=random_state)
+
+    kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    errors_list = []
+
+    plot_dest_list = []
+    for ii, kernel in enumerate(kernels_list):
+        plot_dest_list.append(os.path.join(plot_dest, kernel))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+
+
+    if pca_kernels_list is None:
+        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    if type(pca_kernels_list) is not list:
+        pca_kernels_list = [pca_kernels_list]
+    errors_list = []
+    
+    # print(pca_kernels_list)
+    for _, kernel in enumerate(pca_kernels_list):
+        step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
+        try:
+            if verbose == 1:
+                print()
+                print('=' * 100)
+                print(step_msg)
+                print('=' * 100)
+
+            # Prepare data
+            Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
+
+            # Perform CV, LOOCV, Stratified CV
+            # Once gotten all results exploit them to fill data object list
+            # used later to fill in a result dataframe
+            data = perform_cv_techniques(data, estimator, Xtrain, Xtrain_transformed, ytrain, cv_list, verbose=0)
+
+            # Perform standard fit and evaluate
+            # clf_cloned = sklearn.base.clone(estimator)
+            # clf = fit(clf_cloned, Xtrain_transformed, ytrain, Xtest_transformed, ytest, verbose=verbose)
+            
+            clf_cloned = sklearn.base.clone(estimator)
+            clf_cloned.probability=True
+            data_fit_strf = fit_strfd(data_fit_strf, kernel, n_components, clf_cloned, X, y, n_splits=2, verbose=0)
+            
+            if show_plots:
+                # show_plots_fit_by_n(clf, kernel, n_components, Xtest_transformed, ytest)
+                pass
+        except Exception as err:
+            # Handle error if one occurs
+            print('ERROR: ' + step_msg + ' ' + str(err))
+            errors_list.append('ERROR: ' + step_msg + ' ' + str(err))
+            pass
+        if show_errors:
+            # Show error if one occurs, and 'show_errors' flag is set to be True
+            print('-' * 100)
+            print('Erors')
+            print('-' * 100)
+            pprint(errors_list)
+        
+        pass
+
+    # Create and return a dataframe object
+    df1 = prepare_output_df(cv_list, pca_kernels_list, data)
+    df2 = prepare_output_df_baseline_fit(pca_kernels_list, data_fit_strf, clf_type)
+    return df1, df2
+
+# --------------------------------------------------------------------------- #
+# Grid Search Custom
+# --------------------------------------------------------------------------- #
+
+def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False):
+    
+    Xtrain, Xtest, ytrain, ytest = train_test_split(
+        X, y,
+        random_state=random_state)
+
+    kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    errors_list = []
+    for kernel in kernels_list:
+        step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
+        try:
+            print()
+            print('=' * 100)
+            print(step_msg)
+            print('=' * 100)
+          
+            title = 'n_components={} | kernel={}'.format(n_components, kernel)
+    
+            kernel_pca =KernelPCA( \
+                n_components=n_components, \
+                kernel=kernel)              
+            kernel_pca.fit(Xtrain)
+            
+            Xtrain_transformed = kernel_pca.transform(Xtrain)
+            Xtest_transformed = kernel_pca.transform(Xtest)
+
+            perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
+
+            clf = None
+            if show_plots:
+                plot_roc_curve(
+                    clf,
+                    Xtest_transformed,
+                    ytest,
+                    )
+                plot_conf_matrix(
+                    clf,
+                    Xtest_transformed,
+                    ytest,
+                    title=title)
+        except Exception as err:
+            err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
+            print(err_msg)
+            errors_list.append(err_msg)
+            pass
+        if show_errors:
+            print('-' * 100)
+            print('Erors')
+            print('-' * 100)
+            pprint(errors_list)
+        pass
+
+def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False):
+    # debug_var = False
+    plot_dest_list = []
+    grid_res_list = []
+
+    if type(estimators_list) is not list:
+        estimators_list = [estimators_list]
+    if type(param_grids) is not list:
+        param_grids = [param_grids]
+    if type(estimators_names) is not list:
+        estimators_names = [estimators_names]
+
+    if pca_kernels_list is None:
+        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+
+    for ii, estimator_name in enumerate(estimators_names[:]):
+        plot_dest_list.append(os.path.join(plot_dest, estimator_name))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+    for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
+        # pprint(estimator_obj.get_params().keys())
+        if verbose == 1 and debug_var is True:
+            print()
+            print('=' * 100)
+            print(estimator_name)
+            print('=' * 100)
+            pass
+        if debug_var is False:
+            grid_res = grid_search_by_n_components(estimator_obj, param_grids[ii], X, y, n_components, estimator_name, kernels_list=pca_kernels_list, random_state=0, show_plots=False, show_errors=False, verbose=verbose, plot_dest=plot_dest_list[ii], estimator_name=estimator_name)
+            grid_res_list.append(grid_res)
+    df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names)
+    return df_grid_searches
+
+def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None):
+    # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
+
+    if kernels_list is None:
+        kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    errors_list = []
+    grid_list = []
+
+    plot_dest_list = []
+    for ii, kernel in enumerate(kernels_list):
+        plot_dest_list.append(os.path.join(plot_dest, kernel))
+        try: os.makedirs(plot_dest_list[ii])
+        except: pass
+    pass
+
+    for ii, kernel in enumerate(kernels_list):
+        step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
+        try:
+            if verbose == 1:
+                print()
+                print('=' * 100)
+                print(step_msg)
+                print('=' * 100)
+          
+            if estimator_name is not None:
+                title = '{} | n_components={} | (PCA) kernel={}'.format(estimator_name, n_components, kernel)
+            else:
+                title = 'n_components={} | (PCA) kernel={}'.format(n_components, kernel)
+    
+            # Prepare data
+            # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
+
+            # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
+            res_grid, auc = grid_search_stratified_cross_validation(
+                estimator, param_grid,
+                X, y,
+                n_components=n_components, kernel=kernel, n_splits=2,
+                title=title, show_figures=True,
+                plot_dest=plot_dest_list[ii],
+                verbose=verbose)
+            grid_list.append((res_grid, kernel, auc))
+
+            # if show_plots: pass
+        except Exception as err:
+            err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
+            print(err_msg)
+            errors_list.append(err_msg)
+            pass
+        if show_errors:
+            print('-' * 100)
+            print('Erors')
+            print('-' * 100)
+            pprint(errors_list)
+        pass
+    
+    return grid_list
