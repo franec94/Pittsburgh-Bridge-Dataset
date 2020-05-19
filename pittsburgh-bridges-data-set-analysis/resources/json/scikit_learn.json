@@ -1,0 +1,32 @@
+{
+    "Theory": [
+        {
+            "title": "An introduction to machine learning with scikit-learn",
+            "link": "https://scikit-learn.org/stable/tutorial/basic/tutorial.html#introduction",
+            "categories": ["Machine Learning", "Theory"]
+        },
+        {
+            "title": "Metrics and scoring: quantifying the quality of predictions",
+            "link": "https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter",
+            "categories": ["Machine Learning", "Theory"]
+        }
+    ],
+
+    "Examples": [
+        {
+            "title": "Parameter estimation using grid search with cross-validation",
+            "link": "https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html",
+            "categories": ["Machine Learning", "Example"]
+        },
+        {
+            "title": "Receiver Operating Characteristic (ROC)",
+            "link": "https://scikit-learn.org/stable/auto_examples/model_selection/plot_grid_search_digits.html",
+            "categories": ["Machine Learning", "Example"]
+        },
+        {
+            "title": "Receiver Operating Characteristic (ROC) with cross validation",
+            "link": "https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc_crossval.html#sphx-glr-auto-examples-model-selection-plot-roc-crossval-py",
+            "categories": ["Machine Learning", "Example"]
+        }
+    ]
+}
