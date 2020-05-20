@@ -55,6 +55,9 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LinearRegression    # Parametric Linear Discriminative Model
+from sklearn.linear_model import LogisticRegression  # Parametric Linear Discriminative Model
+
 
 # SVMs Classifieres
 # --------------------------------------------------------------------------- #
@@ -169,7 +172,29 @@ def example_class_report_iris_dataset(avoid_func_flag: bool = False) -> None:
 # Training Functions
 # --------------------------------------------------------------------------- #
 
-def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=(27, 9), f1=0, f2=1, verbose: int = 0, record_errors: bool = False, apply_pca_flag: bool = False, avoid_func: bool = False, straitified_flag: bool = False, by_pairs: bool = False, singles: bool = False) -> object:
+def classifier_comparison_by_pca_kernels(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=(27, 9), f1=0, f2=1, verbose: int = 0, record_errors: bool = False, kernels_pca_list = None, avoid_func: bool = False, straitified_flag: bool = False, by_pairs: bool = False, singles: bool = False):
+    if avoid_func is True:
+        return list()
+    
+    if kernels_pca_list is None:
+        kernels_pca_list = ['linear', 'poly', 'rbf', 'cosine',]
+    elif type(kernels_pca_list) is str:
+        if kernels_pca_list not in ['linear', 'poly', 'rbf', 'cosine',]:
+            raise f'Error: {kernels_pca_list} not in [linear, poly, rbf, cosine]'
+        kernels_pca_list = [kernels_pca_list]
+
+    err_list_all = []
+    for kernel_pca in kernels_pca_list:
+        err_list = classifier_comparison(
+            copy.deepcopy(X), copy.deepcopy(y),
+            start_clf=0, stop_clf=10,
+            verbose=0, record_errors=True, apply_pca_flag=True,
+            kernel_pca=kernel_pca, straitified_flag=straitified_flag, by_pairs=by_pairs, singles=singles, figsize=figsize)
+        err_list_all.append((kernel_pca, err_list))
+        pass
+    return err_list_all
+
+def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=(27, 9), f1=0, f2=1, verbose: int = 0, record_errors: bool = False, apply_pca_flag: bool = False, kernel_pca: str = 'linear', avoid_func: bool = False, straitified_flag: bool = False, by_pairs: bool = False, singles: bool = False) -> object:
     
     if avoid_func is True:
         return list()
@@ -181,22 +206,7 @@ def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=
     """
     h = .02  # step size in the mesh
 
-    names = ["Nearest Neighbors", "Linear SVM", "RBF SVM", "Gaussian Process",
-         "Decision Tree", "Random Forest", "Neural Net", "AdaBoost",
-         "Naive Bayes", "QDA"]
-
-    classifiers = [
-        KNeighborsClassifier(3),
-        SVC(kernel="linear", C=0.025),
-        SVC(gamma=2, C=1),
-        GaussianProcessClassifier(1.0 * RBF(1.0)),
-        DecisionTreeClassifier(max_depth=5),
-        RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
-        MLPClassifier(alpha=1, max_iter=1000),
-        AdaBoostClassifier(),
-        GaussianNB(),
-        QuadraticDiscriminantAnalysis()
-    ]
+    names, classifiers = get_classifiers()
     
     error_list: list = list()
     names_, classifiers_ = get_updated_list(names, classifiers, start_clf, stop_clf)
@@ -226,7 +236,7 @@ def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=
         # preprocess dataset, split into training and test part
         X, y = ds
 
-        X, X_train, X_test, y_train, y_test = manage_data(X, y, straitified_flag, apply_pca_flag)
+        X, X_train, X_test, y_train, y_test = manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca)
         X_train, X_test = X_train[:, [f1, f2]], X_test[:, [f1, f2]]
 
         x_min, x_max = X[:, f1].min() - .5, X[:, f1].max() + .5
@@ -249,6 +259,100 @@ def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=
 
                 clf.fit(X_train, y_train)
                 score = clf.score(X_test, y_test)
+
+                # Plot the decision boundary. For that, we will assign a color to each
+                # point in the mesh [x_min, x_max]x[y_min, y_max].
+                if hasattr(clf, "decision_function"):
+                    Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])
+                else:
+                    Z = clf.predict_proba(np.c_[xx.ravel(), yy.ravel()])[:, 1]
+
+                # Put the result into a color plot
+                Z = Z.reshape(xx.shape)
+                show_contourf(ds_cnt, X_train, y_train, X_test, y_test, ax, xx, yy, Z, cm, cm_bright, score, title=name, f1=f1, f2=f2)
+                i += 1
+                pass
+            except Exception as err:
+                record_error((name, err), error_list=error_list, record_errors=record_errors)
+                # raise err
+                pass
+        pass
+
+    plt.tight_layout()
+    plt.show()
+    return error_list
+
+
+def classifier_comparison_grid_search(X, y, start_clf: int = 0, stop_clf: int = 6, figsize=(27, 9), f1=0, f2=1, verbose: int = 0, record_errors: bool = False, apply_pca_flag: bool = False, kernel_pca: str = 'linear', avoid_func: bool = False, straitified_flag: bool = False, by_pairs: bool = False, singles: bool = False) -> object:
+    
+    if avoid_func is True:
+        return list()
+    
+    assert len(X.shape) == 2, "X must have at list two predictors"
+    
+    """
+    https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html#sphx-glr-auto-examples-classification-plot-classifier-comparison-py
+    """
+    h = .02  # step size in the mesh
+
+    names, classifiers, params_grid_list = get_classifiers_gs()
+    
+    error_list: list = list()
+    names_, classifiers_ = get_updated_list(names, classifiers, start_clf, stop_clf)
+    
+    # rng = np.random.RandomState(2)
+    # X += 2 * rng.uniform(size=X.shape)
+    linearly_separable = (X, y)
+
+    datasets = [
+        # make_moons(noise=0.3, random_state=0),
+        # make_circles(noise=0.2, factor=0.5, random_state=1),
+        linearly_separable
+    ]
+
+    # _ = plt.figure(figsize=(27, 9)) # figure
+    if figsize is None:
+        _ = plt.figure() # figure
+    else:
+        _ = plt.figure(figsize=figsize) # figure
+
+    i = 1
+    len_dataset, len_classifiers = len(datasets), len(classifiers_)
+    ax = manage_figures_shape(len_dataset, len_classifiers, by_pairs, singles, i)
+
+    # iterate over datasets
+    for ds_cnt, ds in enumerate(datasets):
+        # preprocess dataset, split into training and test part
+        X, y = ds
+
+        X, X_train, X_test, y_train, y_test = manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca)
+        X_train, X_test = X_train[:, [f1, f2]], X_test[:, [f1, f2]]
+
+        x_min, x_max = X[:, f1].min() - .5, X[:, f1].max() + .5
+        y_min, y_max = X[:, f2].min() - .5, X[:, f2].max() + .5
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+
+        # just plot the dataset first
+        cm = plt.cm.RdBu
+        cm_bright = ListedColormap(['#FF0000', '#0000FF'])
+
+        show_input_data(ds_cnt, X_train, y_train, X_test, y_test, ax, xx, yy, cm, cm_bright, f1=f1, f2=f2)
+
+        i += 1                    
+        for ii, (name, clf) in enumerate(zip(names_, classifiers_)):
+            # for name, clf in zip(names, classifiers):
+            try:
+                verbose_message(message=f"Classifier: {name}", verbose=verbose, header_flag=True)
+                ax = manage_figures_shape(len_dataset, len_classifiers, by_pairs, singles, i)
+
+                res_grid, auc = grid_search_stratified_cross_validation(
+                    clf=clf, param_grid=params_grid_list[ii+start_clf],
+                    X=X, y=y,
+                    n_components=2, kernel=kernel_pca, n_splits=2,
+                    title=f"Classifier: {name}", show_figures=False,
+                    verbose=verbose)
+                score = res_grid.score(X_test, y_test)
 
                 # Plot the decision boundary. For that, we will assign a color to each
                 # point in the mesh [x_min, x_max]x[y_min, y_max].
@@ -368,6 +472,121 @@ def manage_figures_shape(len_dataset, len_classifiers, by_pairs, singles, i):
 # Utils Functions
 # --------------------------------------------------------------------------- #
 
+def get_classifiers():
+    names = [
+        "Nearest Neighbors",
+        "Linear SVM",
+        "RBF SVM",
+        "Gaussian Process",
+        "Decision Tree",
+        "Random Forest",
+        "Neural Net",
+        "AdaBoost",
+        "Naive Bayes",
+        "QDA"
+    ]
+
+    classifiers = [
+        KNeighborsClassifier(3),
+        SVC(kernel="linear", C=0.025),
+        SVC(gamma=2, C=1),
+        GaussianProcessClassifier(1.0 * RBF(1.0)),
+        DecisionTreeClassifier(max_depth=5),
+        RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+        MLPClassifier(alpha=1, max_iter=1000),
+        AdaBoostClassifier(),
+        GaussianNB(),
+        QuadraticDiscriminantAnalysis()
+    ]
+    return names, classifiers
+
+
+def get_classifiers_gs():
+
+    names = [
+        "Nearest Neighbors",
+        "Linear SVM",
+        # "RBF SVM",
+        # "Gaussian Process",
+        "Decision Tree",
+        "Random Forest",
+        # "Neural Net",
+        # "AdaBoost",
+        # "Naive Bayes",
+        # "QDA"
+    ]
+
+    classifiers = [
+        KNeighborsClassifier(3),
+        SVC(kernel="linear", C=0.025),
+        # SVC(gamma=2, C=1),
+        # GaussianProcessClassifier(1.0 * RBF(1.0)),
+        DecisionTreeClassifier(max_depth=5),
+        RandomForestClassifier(max_depth=5, n_estimators=10, max_features=1),
+        # MLPClassifier(alpha=1, max_iter=1000),
+        # AdaBoostClassifier(),
+        # GaussianNB(),
+        # QuadraticDiscriminantAnalysis()
+    ]
+
+    estimators_list = [LogisticRegression(), KNeighborsClassifier(), SGDClassifier(), SVC(), DecisionTreeClassifier(), RandomForestClassifier()]
+    estimators_names = ['LogisticRegression', 'KNeighborsClassifier', 'SGDClassifier', 'SVC', 'DecisionTreeClassifier', 'RandomForestClassifier']
+
+    names = estimators_list
+    classifiers = estimators_names
+
+    # pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+    # cv_list = [10, 9, 8, 7, 6, 5, 4, 3, 2]
+
+    parmas_logistic_regression = {
+        'penalty': ('l1', 'l2', 'elastic'),
+        'solver': ('newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga'),
+        'fit_intercept': (True, False),
+        'tol': (1e-4, 1e-3, 1e-2),
+        'C': (1.0, .1, .01, .001),
+    }
+
+    parmas_knn_forest = {
+        'n_neighbors': (2,3,4,5,6,7,8,9,10),
+        'weights': ('uniform', 'distance'),
+        'algorithm': ('ball_tree', 'kd_tree', 'brute'),
+    }
+
+    parameters_sgd_classifier = {
+        'loss': ('log', 'modified_huber'), # ('hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron')
+        'penalty': ('l2', 'l1', 'elasticnet'),
+        'alpha': (1e-1, 1e-2, 1e-3, 1e-4),
+        'max_iter': (50, 100, 150, 200, 500, 1000, 1500, 2000, 2500),
+        'learning_rate': ('optimal',),
+        'tol': (None, 1e-2, 1e-4, 1e-5, 1e-6)
+    }
+
+    kernel_type = 'svm-rbf-kernel'
+    parameters_svm = {
+        'gamma': (0.003, 0.03, 0.05, 0.5, 0.7, 1.0, 1.5),
+        'max_iter':(1e+2, 1e+3, 2 * 1e+3, 5 * 1e+3, 1e+4, 1.5 * 1e+3),
+        # 'penalty': ('l2','l1'),
+        'kernel': ['linear', 'poly', 'rbf', 'sigmoid',],
+        'C': (1e-4, 1e-3, 1e-2, 0.1, 1.0, 10, 1e+2, 1e+3),
+        'probability': (True,), 
+    }
+
+    parmas_decision_tree = {
+        'splitter': ('random', 'best'),
+        'criterion':('gini', 'entropy'),
+        'max_features': (None, 'auto', 'sqrt', 'log2')
+    }
+
+    parmas_random_forest = {
+        'n_estimators': (3, 5, 7, 10, 30, 50, 70, 100, 150, 200),
+        'criterion':('gini', 'entropy'),
+        'bootstrap': (True, False)
+    }
+
+    classifiers_params_grid_search = [parmas_logistic_regression, parmas_knn_forest, parameters_sgd_classifier, parameters_svm, parmas_decision_tree, parmas_random_forest]
+    return names, classifiers, classifiers_params_grid_search
+
+
 def get_updated_list(names, classifiers, start_clf, stop_clf):
     assert start_clf >= 0; assert stop_clf > 0
     assert start_clf < stop_clf; assert stop_clf <= len(classifiers)
@@ -384,7 +603,7 @@ def get_updated_list(names, classifiers, start_clf, stop_clf):
     return names_, classifiers_
 
 
-def manage_data(X, y, straitified_flag, apply_pca_flag, verbose=0):
+def manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca, verbose=0):
     X = StandardScaler().fit_transform(X)
 
     straitified_msg = \
@@ -401,7 +620,8 @@ def manage_data(X, y, straitified_flag, apply_pca_flag, verbose=0):
             train_test_split(X, y, test_size=.4, random_state=42)
         
     if apply_pca_flag is True:
-        X_train, X_test = apply_pca(X_train, X_test, n_components=X_train.shape[1])
+        X_train, X_test, pca = apply_pca(X_train, X_test, n_components=X_train.shape[1], kernel_pca=kernel_pca)
+        X = pca.transform(X)
     
 
     if verbose == 1:
@@ -454,4 +674,4 @@ def apply_pca(X_train, X_test, n_components=2, kernel_pca="linear"):
     X_pca_train = pca.transform(X_train)
     X_pca_test = pca.transform(X_test)
     
-    return X_pca_train, X_pca_test
+    return X_pca_train, X_pca_test, pca

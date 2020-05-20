@@ -165,9 +165,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
 
     # Prepare data
     Xtrain_transformed_, Xtest_transformed_ = KernelPCA_transform_data(n_components, kernel, Xtrain_, Xtest_, verbose=0)
-
     
-
     # skf = StratifiedKFold(n_splits=n_splits)
     # scores = ['precision', 'recall', 'f1']
     scores = ['accuracy']
@@ -196,20 +194,21 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             print('[*] Best Score:')
             pprint(grid.best_score_)
             pass
-        print("Grid scores on development set:")
-        print()
-
-        try:
-            means = grid.cv_results_['mean_test_score']
-            stds = grid.cv_results_['std_test_score']
-            for mean, std, params in zip(means, stds, clf.cv_results_['params']):
-                print("%0.3f (+/-%0.03f) for %r"
-                      % (mean, std * 2, params))
+            print("Grid scores on development set:")
             print()
-        except: pass
-        y_true, y_pred = ytest_, grid.predict(Xtest_transformed_)
-        print(classification_report(y_true, y_pred))
-        print()
+
+            try:
+                means = grid.cv_results_['mean_test_score']
+                stds = grid.cv_results_['std_test_score']
+                for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+                    print("%0.3f (+/-%0.03f) for %r"
+                        % (mean, std * 2, params))
+                print()
+            except: pass
+            y_true, y_pred = ytest_, grid.predict(Xtest_transformed_)
+            print(classification_report(y_true, y_pred))
+            print()
+            pass
         pass
     
     if show_figures is True:
