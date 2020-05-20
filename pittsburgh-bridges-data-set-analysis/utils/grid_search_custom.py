@@ -161,18 +161,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         print('Grid Search | Stratified-K-Fold Cross-Validation')
         print('-' * 100)
 
-    # Get N-stratified Groups
-    class_0_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 0, enumerate(y))))
-    class_1_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 1, enumerate(y))))
-
-    p_class0 = get_indices(class_0_indeces)
-    p_class1 = get_indices(class_1_indeces)
-    
-    # ytrain_ = [y[ii]for ii in p1a] + [y[ii]for ii in p1b] # ytest_ = [y[ii]for ii in p2a] + [y[ii]for ii in p2b]
-    p_train = p_class0[0] + p_class1[0]
-    p_test = p_class0[1] + p_class1[1]
-
-    Xtrain_, Xtest_, ytrain_, ytest_ = get_data(p_train, p_test, X, y)
+    Xtrain_, Xtest_, ytrain_, ytest_ = get_stratified_groups(X, y)
 
     # Prepare data
     Xtrain_transformed_, Xtest_transformed_ = KernelPCA_transform_data(n_components, kernel, Xtrain_, Xtest_, verbose=0)

@@ -14,12 +14,14 @@ from itertools import islice
 import itertools
 
 # Matplotlib pyplot provides plotting API
+# --------------------------------------------------------------------------- #
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
+# --------------------------------------------------------------------------- #
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
@@ -32,31 +34,45 @@ from sklearn.preprocessing import Normalizer     # Normalize data (length of 1)
 from sklearn.preprocessing import Binarizer      # Binarization
 
 # Imports for handling Training
+# --------------------------------------------------------------------------- #
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 
 # After Training Analysis Imports
+# --------------------------------------------------------------------------- #
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 
+# --------------------------------------------------------------------------- #
 # Classifiers Imports
+# --------------------------------------------------------------------------- #
+
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+
 # SVMs Classifieres
+# --------------------------------------------------------------------------- #
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 
 # Bayesian Classifieres
+# --------------------------------------------------------------------------- #
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.naive_bayes import GaussianNB
 
 # Decision Tree Classifieres
+# --------------------------------------------------------------------------- #
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 
 # Import scikit-learn classes: Hyperparameters Validation utility functions.
+# --------------------------------------------------------------------------- #
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import LeavePOut
 from sklearn.model_selection import LeaveOneOut
@@ -64,7 +80,11 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import validation_curve
 from sklearn.model_selection import learning_curve
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.gaussian_process.kernels import RBF
+
 # Import scikit-learn classes: model's evaluation step utility functions.
+# --------------------------------------------------------------------------- #
 from sklearn.metrics import accuracy_score 
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_roc_curve
@@ -650,8 +670,10 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
             pprint(errors_list)
         pass
 
-def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False):
+def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False, avoid_func=False):
     # debug_var = False
+    if avoid_func is True:
+        return None
     plot_dest_list = []
     grid_res_list = []
 
