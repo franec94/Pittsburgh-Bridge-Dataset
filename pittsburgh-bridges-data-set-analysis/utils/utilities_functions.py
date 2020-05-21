@@ -11,6 +11,8 @@ import copy
 from scipy import stats
 from scipy import interp
 from itertools import islice
+from IPython import display
+import ipywidgets as widgets
 import itertools
 
 # Matplotlib pyplot provides plotting API
@@ -74,6 +76,7 @@ from sklearn.metrics import classification_report
 # --------------------------------------------------------------------------- #
 # Confusion Matirx & Roc Curve Custom
 # --------------------------------------------------------------------------- #
+
 def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png"):
     
     y_model = model.predict(Xtest)
@@ -87,6 +90,7 @@ def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png
         plt.title(title)
     plt.savefig(plot_name)
     pass
+
 
 def plot_roc_curve_custom(model,
     X_test, y_test,
@@ -120,6 +124,7 @@ def plot_roc_curve_custom(model,
     # plt.show()
     return roc_auc
 
+
 def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
     # Shos some plots if 'show_plot' flag is valued as True
     plot_roc_curve_custom(
@@ -133,6 +138,7 @@ def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
         ytest,
         title='n_components={} | kernel={}'.format(10, kernel))
     pass
+
 
 def add_records(data, cv_list, res_kf, res_loo, res_sscv):
     # record = list(map(lambda xi: f"{xi[0]:.2f} (+/-) {xi[1]:.2f}", [xi[1:] for xi in res_kf]))
@@ -158,6 +164,7 @@ def add_records(data, cv_list, res_kf, res_loo, res_sscv):
         pass
     return data
 
+
 def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest, verbose=0):
     if verbose == 1:
         print('KernelPCA')
@@ -180,6 +187,7 @@ def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest, verbose=0):
 
     return Xtrain_transformed, Xtest_transformed
 
+
 def prepare_output_df(cv_list, pca_kernels_list, data):
     # col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", cv_list))
     # col_names_st = list(map(lambda xi: f"STD(cv={xi})", cv_list))
@@ -201,6 +209,7 @@ def prepare_output_df(cv_list, pca_kernels_list, data):
     df = pd.DataFrame(data=data, columns=col_names,  index=idx_names)
     return df
 
+
 def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
 
     col_names = []
@@ -211,18 +220,29 @@ def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
 
 def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
     data, data_auc = [], []
-
+    col_params_names = None
     for _, a_grid_search in enumerate(grid_searchs):
-        tmp_res,tmp_auc = [], []
+        tmp_res, tmp_auc = [], []
         for _, (a_grid, _, auc) in enumerate(a_grid_search):
-            tmp_res.append("%.2f" % (a_grid.best_score_,))
+            
+            best_params_values = list(map(str, a_grid.best_params_.values()))
+            best_score = "%.2f" % (a_grid.best_score_,)
+            tmp_res = ([best_score] + best_params_values)
             tmp_auc.append("%.2f" % (auc,))
+
+            col_params_names = list(a_grid.best_params_.keys())
+            data.append(tmp_res)
             pass
-        data.append(tmp_res)
+        # data.append(tmp_res)
         data_auc.append(tmp_auc)
         pass
-    col_names = [f'{k} Acc' for k in pca_kernels]
-    df = pd.DataFrame(data=data, columns=col_names,  index=estimator_names)
+
+    # col_names = [f'{k} Acc' for k in pca_kernels]
+    col_names = ["Acc"] + col_params_names
+    indeces = []
+    for estimator_name in estimator_names:
+        indeces.extend([f'{estimator_names} {k}' for k in pca_kernels])
+    df = pd.DataFrame(data=data, columns=col_names,  index=indeces)
     
     col_names = [f'{k} AUC' for k in pca_kernels]
     df_auc = pd.DataFrame(data=data_auc, columns=col_names,  index=estimator_names)
@@ -240,6 +260,7 @@ def get_indices(class_ith_indeces, chunks=2):
     p2a = class_ith_indeces[max_len:]
     return [p1a, p2a]
 
+
 def get_data(p_train, p_test, X, y):
     ytrain_ = np.array([y[ii]for ii in p_train])
     ytest_ = np.array([y[ii]for ii in p_test])
@@ -251,7 +272,9 @@ def get_data(p_train, p_test, X, y):
     assert len(ytest_) == len(Xtest_),f"Train {len(ytrain_)} ?? {len(Xtrain_)} Test {len(ytest_)} != {len(Xtest_)}" 
     return Xtrain_, Xtest_, ytrain_, ytest_
 
+
 def get_stratified_groups(X, y):
+
     # Get N-stratified Groups
     class_0_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 0, enumerate(y))))
     class_1_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 1, enumerate(y))))
@@ -265,3 +288,14 @@ def get_stratified_groups(X, y):
 
     Xtrain_, Xtest_, ytrain_, ytest_ = get_data(p_train, p_test, X, y)
     return Xtrain_, Xtest_, ytrain_, ytest_
+
+
+def create_widget_list_df(df_list):
+    res_list = []
+    for df in df_list:
+        widget = widgets.Output()
+        with widget: display.display(df); pass
+        res_list.append(widget)
+        pass
+    hbox = widgets.HBox(res_list)
+    return hbox

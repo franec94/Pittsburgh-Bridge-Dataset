@@ -13,7 +13,8 @@ import sys
 from scipy import stats
 from scipy import interp
 from itertools import islice
-from IPython.display import display
+from IPython import display
+import ipywidgets as widgets
 import itertools
 
 # Matplotlib pyplot provides plotting API
@@ -184,21 +185,21 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
 
         grid.fit(Xtrain_transformed_, ytrain_)
         if verbose == 1:
-            print()
-            print('[*] Best Params:')
-            pprint(grid.best_params_)
+            # print()
+            # print('[*] Best Params:')
+            # pprint(grid.best_params_)
 
-            print()
-            print('[*] Best Estimator:')
-            pprint(grid.best_estimator_)
+            # print()
+            # print('[*] Best Estimator:')
+            # pprint(grid.best_estimator_)
 
-            print()
-            print('[*] Best Score:')
-            pprint(grid.best_score_)
+            # print()
+            # print('[*] Best Score:')
+            # pprint(grid.best_score_)
             pass
-            print("Grid scores on development set:")
-            print()
-
+            # print("Grid scores on development set:")
+            # print()
+            
             try:
                 means = grid.cv_results_['mean_test_score']
                 stds = grid.cv_results_['std_test_score']
@@ -208,9 +209,10 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
                 print()
             except: pass
             y_true, y_pred = ytest_, grid.predict(Xtest_transformed_)
-            print(classification_report(y_true, y_pred))
-            df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
-            # display(classification_report(y_true, y_pred))
+            # print(classification_report(y_true, y_pred))
+            # df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
+            df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
+            print(df)
             df_list.append(df)
             print()
             pass
@@ -234,14 +236,24 @@ def from_class_report_to_df(y_true, y_pred, target_names, support):
         record = []
         try:
             for _, v2 in v.items():
-                record.append(v2)
+                record.append("%.2f" % (v2,))
             data.append(record)
         except:
-            record = [None] * 2 + [v] + [support]
+            record = [""] * 2 + ["%.2f" % (v,)] + ["%d" % (support,)]
             data.append(record)
         pass
     df = pd.DataFrame(data=data, columns=columns_df, index=indeces_df[:])
     return df
+
+def create_widget_class_report(y_true, y_pred, target_names, support):
+    df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
+    widget = widgets.Output()
+    with widget:
+        display.display(df)
+    # create HBox
+    hbox = widgets.HBox([widget])
+    return hbox
+
 # =============================================================================================== #
 # Web site links
 # =============================================================================================== #
