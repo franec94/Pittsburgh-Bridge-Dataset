@@ -158,10 +158,11 @@ def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, yte
 def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures"):
     # Stratified-K-Fold Cross-Validation
     if verbose == 1:
-        print()
-        print('-' * 100)
-        print('Grid Search | Stratified-K-Fold Cross-Validation')
-        print('-' * 100)
+        # print()
+        # print('-' * 100)
+        # print('Grid Search | Stratified-K-Fold Cross-Validation')
+        # print('-' * 100)
+        pass
 
     Xtrain_, Xtest_, ytrain_, ytest_ = get_stratified_groups(X, y)
 
@@ -199,7 +200,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             pass
             # print("Grid scores on development set:")
             # print()
-            
+
             try:
                 means = grid.cv_results_['mean_test_score']
                 stds = grid.cv_results_['std_test_score']
@@ -218,13 +219,13 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             pass
         pass
     
-    if show_figures is True:
-        conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-        plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name)
+    # if show_figures is True:
+    conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
+    plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures)
 
-        roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-        auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name)
-        pass
+    roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
+    auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures)
+
     return grid, auc, df_list
 
 def from_class_report_to_df(y_true, y_pred, target_names, support):

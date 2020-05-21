@@ -443,7 +443,7 @@ def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None,
 
     pass
 
-def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_pairs=False):
+def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_pairs=False, show_figure=False):
 
     try: os.makedirs(plot_dest)
     except: pass
@@ -501,9 +501,13 @@ def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=No
     #plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25,
     #                wspace=0.35)
 
+    plt.savefig(os.path.join(plot_dest, plot_name))
     if show_pairs is True:
-        plt.savefig(os.path.join(plot_dest, plot_name))
-        plt.show()
+        if show_figure is True:
+            plt.show()
+    else:
+        if show_figure is True:
+            plt.show()
     pass
 
 def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figures", n=None, col_names=None, figsize=(10, 10), show_pairs=False):

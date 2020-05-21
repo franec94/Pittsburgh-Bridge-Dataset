@@ -761,7 +761,7 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
                 estimator, param_grid,
                 X, y,
                 n_components=n_components, kernel=kernel, n_splits=2,
-                title=title, show_figures=True,
+                title=title, show_figures=show_plots,
                 plot_dest=plot_dest_list[ii],
                 verbose=verbose)
             grid_list.append((res_grid, kernel, auc))

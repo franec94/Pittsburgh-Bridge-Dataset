@@ -77,7 +77,7 @@ from sklearn.metrics import classification_report
 # Confusion Matirx & Roc Curve Custom
 # --------------------------------------------------------------------------- #
 
-def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png"):
+def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png", show_figure=False):
     
     y_model = model.predict(Xtest)
     mat = confusion_matrix(ytest, y_model)
@@ -89,12 +89,17 @@ def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png
     if title:
         plt.title(title)
     plt.savefig(plot_name)
+    
+    if show_figure is True:
+        plt.show()
+    else:
+        plt.close(fig)
     pass
 
 
 def plot_roc_curve_custom(model,
     X_test, y_test,
-    label=None, title=None, plot_name="roc_curve.png"):
+    label=None, title=None, plot_name="roc_curve.png", show_figure=False):
     
     y_pred = model.predict_proba(X_test)
     # print('y_test', type(y_test)); print('y_pred', type(y_pred));
@@ -122,6 +127,10 @@ def plot_roc_curve_custom(model,
     # plt.legend(loc='best')
     plt.savefig(plot_name)
     # plt.show()
+    if show_figure is True:
+        plt.show()
+    else:
+        plt.close(fig)
     return roc_auc
 
 
@@ -241,7 +250,7 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
     col_names = ["Acc"] + col_params_names
     indeces = []
     for estimator_name in estimator_names:
-        indeces.extend([f'{estimator_names} {k}' for k in pca_kernels])
+        indeces.extend([f'{estimator_name} {k}' for k in pca_kernels])
     df = pd.DataFrame(data=data, columns=col_names,  index=indeces)
     
     col_names = [f'{k} AUC' for k in pca_kernels]
@@ -299,3 +308,11 @@ def create_widget_list_df(df_list):
         pass
     hbox = widgets.HBox(res_list)
     return hbox
+
+def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
+    res = list(set(df1.columns).intersection(set(df2.columns)))
+    df_res = pd.concat([df1[res], df2[res]], axis=axis, ignore_index=ignore_index)
+    if df1.index.equals(df2.index) is False:
+        indeces = pd.Index(list(df1.index) + list(df2.index))
+        return df_res.set_index(indeces)
+    return df_res
