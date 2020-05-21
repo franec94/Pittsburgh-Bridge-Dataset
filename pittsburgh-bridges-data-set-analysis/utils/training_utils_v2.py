@@ -502,13 +502,22 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 # --------------------------------------------------------------------------- #
 # Training Custom
 # --------------------------------------------------------------------------- #
-def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
+def fit_all_by_n_components(
+    estimators_list, estimators_names,
+    X, y,
+    n_components=2,
+    pca_kernels_list=None, cv_list=None,
+    show_plots=False, plot_dest="figures",
+    verbose=0):
+
+    assert type(X) is np.ndarray, f"Error: Feature Matrix X's type is not np.ndarray but instead is an instance of type: {type(X)}"
+    assert type(y) is np.ndarray, f"Error: target array y's type is not np.ndarray but instead is an instance of type: {type(y)}"
+
     dfs_list, df = [], None
 
     if type(estimators_list) is not list:
         estimators_list = [estimators_list]
-    if type(param_grids) is not list:
-        param_grids = [param_grids]
+    # if type(param_grids) is not list: param_grids = [param_grids]
     if type(estimators_names) is not list:
         estimators_names = [estimators_names]
 
@@ -522,8 +531,8 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
     for _, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         res_df1, res_df2 = fit_by_n_components(
             estimator=estimator_obj, \
-            X=X, \
-            y=y, \
+            X=copy.deepcopy(X), \
+            y=copy.deepcopy(y), \
             n_components=n_components, \
             clf_type=f"{estimator_name}", \
             verbose=verbose,
@@ -538,10 +547,20 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             df = pd.concat([df,res_df2])
     return dfs_list, df
 
-def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
+def fit_by_n_components(
+    estimator,
+    X, y,
+    n_components, clf_type,
+    random_state=0, plot_dest="figures",
+    pca_kernels_list=None, cv_list=None,
+    show_plots=False, show_errors=False,
+    verbose=0):
     
-    data = []
-    data_fit_strf = []
+
+    assert type(X) is np.ndarray, f"Error: Feature Matrix X's type is not np.ndarray but instead is an instance of type: {type(X)}"
+    assert type(y) is np.ndarray, f"Error: target array y's type is not np.ndarray but instead is an instance of type: {type(y)}"
+
+    data, data_fit_strf = [], []
     
     # print(pca_kernels_list)
     
@@ -550,9 +569,8 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
         random_state=random_state)
 
     kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
-    errors_list = []
+    errors_list, plot_dest_list = [], []
 
-    plot_dest_list = []
     for ii, kernel in enumerate(kernels_list):
         plot_dest_list.append(os.path.join(plot_dest, kernel))
         try: os.makedirs(plot_dest_list[ii])

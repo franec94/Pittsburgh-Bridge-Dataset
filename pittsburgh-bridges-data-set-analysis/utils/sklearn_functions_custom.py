@@ -618,11 +618,11 @@ def get_updated_list(names, classifiers, start_clf, stop_clf):
 
 def performe_X_rescaling(X: np.ndarray, scaler_technique: str = 'StandardScaler') -> np.ndarray:
     _scaler_technique = scaler_technique.lower()
-    if _scaler_technique is 'StandardScaler'.lower():
+    if _scaler_technique == 'StandardScaler'.lower():
         return StandardScaler().fit_transform(X)
-    elif _scaler_technique is 'Normalizer'.lower():
+    elif _scaler_technique == 'Normalizer'.lower():
         return Normalizer().fit_transform(X) 
-    elif _scaler_technique is 'MinMaxScaler'.lower():
+    elif _scaler_technique == 'MinMaxScaler'.lower():
         return MinMaxScaler().fit_transform(X)
     else:
         raise Exception(f"Error: {scaler_technique} is not allowed as rescaling technique")
