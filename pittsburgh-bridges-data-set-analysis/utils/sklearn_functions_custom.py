@@ -34,6 +34,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler # Standardize data (0 mean, 1 stdev)
 from sklearn.preprocessing import Normalizer     # Normalize data (length of 1)
 from sklearn.preprocessing import Binarizer      # Binarization
+from sklearn.preprocessing import MinMaxScaler
 
 # Imports for handling Training
 # --------------------------------------------------------------------------- #
@@ -172,7 +173,19 @@ def example_class_report_iris_dataset(avoid_func_flag: bool = False) -> None:
 # Training Functions
 # --------------------------------------------------------------------------- #
 
-def classifier_comparison_by_pca_kernels(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=(27, 9), f1=0, f2=1, verbose: int = 0, record_errors: bool = False, kernels_pca_list = None, avoid_func: bool = False, straitified_flag: bool = False, by_pairs: bool = False, singles: bool = False):
+def classifier_comparison_by_pca_kernels(
+    X, y,
+    start_clf: int = 0, stop_clf: int = 10,
+    f1=0, f2=1,
+    scaler_technique: str = 'StandardScaler',
+    straitified_flag: bool = False, kernels_pca_list = None,
+    figsize=(27, 9), by_pairs: bool = False, singles: bool = False,
+    verbose: int = 0, record_errors: bool = False, avoid_func: bool = False) -> list:
+
+    """
+    https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html#sphx-glr-auto-examples-classification-plot-classifier-comparison-py
+    """
+
     if avoid_func is True:
         return list()
     
@@ -188,44 +201,44 @@ def classifier_comparison_by_pca_kernels(X, y, start_clf: int = 0, stop_clf: int
         err_list = classifier_comparison(
             copy.deepcopy(X), copy.deepcopy(y),
             start_clf=0, stop_clf=10,
-            verbose=0, record_errors=True, apply_pca_flag=True,
-            kernel_pca=kernel_pca, straitified_flag=straitified_flag, by_pairs=by_pairs, singles=singles, figsize=figsize)
+            scaler_technique=scaler_technique, straitified_flag=straitified_flag,
+            apply_pca_flag=True, kernel_pca=kernel_pca,
+            figsize=figsize, by_pairs=by_pairs, singles=singles,
+            verbose=0, record_errors=True)
         err_list_all.append((kernel_pca, err_list))
         pass
     return err_list_all
 
-def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=(27, 9), f1=0, f2=1, verbose: int = 0, record_errors: bool = False, apply_pca_flag: bool = False, kernel_pca: str = 'linear', avoid_func: bool = False, straitified_flag: bool = False, by_pairs: bool = False, singles: bool = False) -> object:
+def classifier_comparison(
+    X, y,
+    start_clf: int = 0, stop_clf: int = 10,
+    f1=0, f2=1,
+    apply_pca_flag: bool = False, kernel_pca: str = 'linear',
+    straitified_flag: bool = False, scaler_technique: str = 'StandardScaler',
+    figsize=(27, 9),  by_pairs: bool = False, singles: bool = False,
+    verbose: int = 0, record_errors: bool = False,  avoid_func: bool = False) -> object:
     
+    """
+    https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html#sphx-glr-auto-examples-classification-plot-classifier-comparison-py
+    """
+
     if avoid_func is True:
         return list()
     
     assert len(X.shape) == 2, "X must have at list two predictors"
     
-    """
-    https://scikit-learn.org/stable/auto_examples/classification/plot_classifier_comparison.html#sphx-glr-auto-examples-classification-plot-classifier-comparison-py
-    """
     h = .02  # step size in the mesh
+    error_list: list = list()
 
     names, classifiers = get_classifiers()
-    
-    error_list: list = list()
     names_, classifiers_ = get_updated_list(names, classifiers, start_clf, stop_clf)
     
-    # rng = np.random.RandomState(2)
-    # X += 2 * rng.uniform(size=X.shape)
     linearly_separable = (X, y)
-
-    datasets = [
-        # make_moons(noise=0.3, random_state=0),
-        # make_circles(noise=0.2, factor=0.5, random_state=1),
-        linearly_separable
-    ]
+    datasets = [linearly_separable]
 
     # _ = plt.figure(figsize=(27, 9)) # figure
-    if figsize is None:
-        _ = plt.figure() # figure
-    else:
-        _ = plt.figure(figsize=figsize) # figure
+    if figsize is None: _ = plt.figure() # figure
+    else: _ = plt.figure(figsize=figsize) # figure
 
     i = 1
     len_dataset, len_classifiers = len(datasets), len(classifiers_)
@@ -236,7 +249,7 @@ def classifier_comparison(X, y, start_clf: int = 0, stop_clf: int = 10, figsize=
         # preprocess dataset, split into training and test part
         X, y = ds
 
-        X, X_train, X_test, y_train, y_test = manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca)
+        X, X_train, X_test, y_train, y_test = manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca, scaler_technique)
         X_train, X_test = X_train[:, [f1, f2]], X_test[:, [f1, f2]]
 
         x_min, x_max = X[:, f1].min() - .5, X[:, f1].max() + .5
@@ -603,8 +616,20 @@ def get_updated_list(names, classifiers, start_clf, stop_clf):
     return names_, classifiers_
 
 
-def manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca, verbose=0):
-    X = StandardScaler().fit_transform(X)
+def performe_X_rescaling(X: np.ndarray, scaler_technique: str = 'StandardScaler') -> np.ndarray:
+    _scaler_technique = scaler_technique.lower()
+    if _scaler_technique is 'StandardScaler'.lower():
+        return StandardScaler().fit_transform(X)
+    elif _scaler_technique is 'Normalizer'.lower():
+        return Normalizer().fit_transform(X) 
+    elif _scaler_technique is 'MinMaxScaler'.lower():
+        return MinMaxScaler().fit_transform(X)
+    else:
+        raise Exception(f"Error: {scaler_technique} is not allowed as rescaling technique")
+    pass
+
+def manage_data(X, y, straitified_flag, apply_pca_flag, kernel_pca, scaler_technique='StandardScaler', verbose=0):
+    X = performe_X_rescaling(X, scaler_technique)
 
     straitified_msg = \
         "straitified_flag is True" if straitified_flag is True \
@@ -675,3 +700,12 @@ def apply_pca(X_train, X_test, n_components=2, kernel_pca="linear"):
     X_pca_test = pca.transform(X_test)
     
     return X_pca_train, X_pca_test, pca
+
+
+# =============================================================================================== #
+# External Useful Links
+# =============================================================================================== #
+
+# sklearn.preprocessing.MinMaxScaler
+# ----------------------------------------------------------------------------------------------- #
+# - https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html

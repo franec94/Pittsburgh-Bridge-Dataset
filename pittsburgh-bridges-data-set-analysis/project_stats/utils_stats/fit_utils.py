@@ -54,7 +54,7 @@ from sklearn.model_selection import train_test_split
 
 # Custom Imports
 # --------------------------------------------------------------------------- #
-from utils_functions import *
+from utils_stats.utils_functions import *
 
 # =========================================================================== #
 # Functions
