@@ -703,7 +703,7 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
         estimators_names = [estimators_names]
 
     if pca_kernels_list is None:
-        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine', 'sigmoid']
 
     for ii, estimator_name in enumerate(estimators_names[:]):
         plot_dest_list.append(os.path.join(plot_dest, estimator_name))
@@ -728,7 +728,7 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
     # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
 
     if kernels_list is None:
-        kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+        kernels_list = ['linear', 'poly', 'rbf', 'cosine', 'sigmoid']
     errors_list = []
     grid_list = []
 
