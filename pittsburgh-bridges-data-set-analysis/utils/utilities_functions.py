@@ -227,6 +227,7 @@ def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
     df = pd.DataFrame(data=[data], columns=col_names,  index=[estimator_name])
     return df
 
+
 def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
     data, data_auc = [], []
     col_params_names = None
@@ -309,6 +310,7 @@ def create_widget_list_df(df_list):
     hbox = widgets.HBox(res_list)
     return hbox
 
+
 def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
     res = list(set(df1.columns).intersection(set(df2.columns)))
     df_res = pd.concat([df1[res], df2[res]], axis=axis, ignore_index=ignore_index)
@@ -316,6 +318,7 @@ def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
         indeces = pd.Index(list(df1.index) + list(df2.index))
         return df_res.set_index(indeces)
     return df_res
+
 
 def reshape_dfs_acc(list_df, num_col=4, n_cp_list=[2, 9, 11]):
 
@@ -327,10 +330,10 @@ def reshape_dfs_acc(list_df, num_col=4, n_cp_list=[2, 9, 11]):
         columns_names = list(set(list(map(lambda xi: xi.split(" ")[1], indeces))))
         data = []
         for ii in range(0, df.shape[0], num_col):
-            a_record = df[ii:(ii+num_col), 0].values
+            a_record = df.iloc[ii:(ii+num_col), 0].values
             data.append(a_record)
             pass
-        columns_names = map(lambda xi: f"{xi}(PCS={ncp})", columns_names)
+        columns_names = list(map(lambda xi: f"{xi}(PCs={ncp})", columns_names))
         df = pd.DataFrame(data=data, columns=columns_names, index=estimators_names)
         updated_list.append(df)
     return updated_list
