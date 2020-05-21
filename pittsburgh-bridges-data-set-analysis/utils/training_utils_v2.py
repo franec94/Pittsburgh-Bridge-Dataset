@@ -713,8 +713,8 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
     for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         # pprint(estimator_obj.get_params().keys())
         if verbose == 1 and debug_var is True:
-            print()
-            print('=' * 100)
+            # print()
+            # print('=' * 100)
             print(estimator_name)
             print('=' * 100)
             pass
@@ -743,8 +743,8 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
         step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
         try:
             if verbose == 1:
-                print()
-                print('=' * 100)
+                # print()
+                # print('=' * 100)
                 print(step_msg)
                 print('=' * 100)
           

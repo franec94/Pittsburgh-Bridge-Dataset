@@ -316,3 +316,21 @@ def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
         indeces = pd.Index(list(df1.index) + list(df2.index))
         return df_res.set_index(indeces)
     return df_res
+
+def reshape_dfs_acc(list_df, num_col=4, n_cp_list=[2, 9, 11]):
+
+    assert len(list_df) == len(n_cp_list)
+    updated_list = []
+    for df, ncp in zip(list_df, n_cp_list):
+        indeces = list(df.index)
+        estimators_names = list(set(list(map(lambda xi: xi.split(" ")[0], indeces))))
+        columns_names = list(set(list(map(lambda xi: xi.split(" ")[1], indeces))))
+        data = []
+        for ii in range(0, df.shape[0], num_col):
+            a_record = df[ii:(ii+num_col), 0].values
+            data.append(a_record)
+            pass
+        columns_names = map(lambda xi: f"{xi}(PCS={ncp})", columns_names)
+        df = pd.DataFrame(data=data, columns=columns_names, index=estimators_names)
+        updated_list.append(df)
+    return updated_list
