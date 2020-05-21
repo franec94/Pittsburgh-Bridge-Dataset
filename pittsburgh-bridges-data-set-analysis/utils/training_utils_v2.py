@@ -757,7 +757,7 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
             # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
 
             # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-            res_grid, auc = grid_search_stratified_cross_validation(
+            res_grid, auc, _ = grid_search_stratified_cross_validation( # res_grid, auc, df_list_class_reports
                 estimator, param_grid,
                 X, y,
                 n_components=n_components, kernel=kernel, n_splits=2,

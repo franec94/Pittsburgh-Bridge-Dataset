@@ -13,6 +13,7 @@ import sys
 from scipy import stats
 from scipy import interp
 from itertools import islice
+from IPython.display import display
 import itertools
 
 # Matplotlib pyplot provides plotting API
@@ -170,7 +171,8 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     # scores = ['precision', 'recall', 'f1']
     scores = ['accuracy']
     grid = None
-    for score in scores:
+    df_list = []
+    for _ in scores:
         # print("# Tuning hyper-parameters for %s" % score)
         # print()
         grid = GridSearchCV(
@@ -207,6 +209,9 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             except: pass
             y_true, y_pred = ytest_, grid.predict(Xtest_transformed_)
             print(classification_report(y_true, y_pred))
+            df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
+            # display(classification_report(y_true, y_pred))
+            df_list.append(df)
             print()
             pass
         pass
@@ -218,8 +223,25 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
         auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name)
         pass
-    return grid, auc
+    return grid, auc, df_list
 
+def from_class_report_to_df(y_true, y_pred, target_names, support):
+    res_report = classification_report(y_true, y_pred, target_names=target_names, output_dict=True)
+    indeces_df = list(res_report.keys())
+    columns_df = list(res_report[list(res_report.keys())[0]].keys())
+    data = []
+    for _, v in res_report.items():
+        record = []
+        try:
+            for _, v2 in v.items():
+                record.append(v2)
+            data.append(record)
+        except:
+            record = [None] * 2 + [v] + [support]
+            data.append(record)
+        pass
+    df = pd.DataFrame(data=data, columns=columns_df, index=indeces_df[:])
+    return df
 # =============================================================================================== #
 # Web site links
 # =============================================================================================== #
