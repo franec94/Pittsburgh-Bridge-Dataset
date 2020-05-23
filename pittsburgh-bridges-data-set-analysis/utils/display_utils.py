@@ -335,7 +335,8 @@ def show_categorical_predictor_values(df, columns_2_avoid=None, verbose=0):
     for _, predictor in enumerate(columns_2_keep):
         # print(index, predictor)
         labels = df[predictor].astype('category').cat.categories.tolist()
-        # pprint.pprint(predictor, labels)
+        # pprint(predictor)
+        # pprint(labels)
         if verbose == 1:
             print(f"%-{max_len_name}s" % (predictor,), ':', labels)
         if '?' in labels:

@@ -84,7 +84,7 @@ def load_brdiges_dataset(dataset_path=None, dataset_name=None, verbose=0):
     
     
     # === INTERMEDIATE RESULT FOUNDED === #
-    preprocess_categorical_variables(dataset, columns_2_avoid)
+    feature_vs_values = preprocess_categorical_variables(dataset, columns_2_avoid)
     if verbose == 1:
         print(dataset.info())
     
@@ -123,7 +123,7 @@ def load_brdiges_dataset(dataset_path=None, dataset_name=None, verbose=0):
     # print('Number of null values for each predictor:\n{}'.format(result))
     if verbose == 1:
         print(dataset.describe(include='all'))
-    return dataset
+    return dataset, feature_vs_values
 
 # ================================================================================ #
 #  load_pittsburg_dataset()
