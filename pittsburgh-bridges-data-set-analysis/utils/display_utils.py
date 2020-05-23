@@ -264,7 +264,7 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
     pass
 
 
-def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None):
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False):
     
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
@@ -295,7 +295,9 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
                     if val == v:
                         l.append(k)
                         break
-            sns.barplot(l, predictor_count.values, alpha=0.9)
+            if grid_display is True: pass
+            else:
+                sns.barplot(l, predictor_count.values, alpha=0.9)
         else:
             sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
         
