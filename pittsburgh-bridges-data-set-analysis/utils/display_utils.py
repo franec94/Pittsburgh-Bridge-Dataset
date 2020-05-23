@@ -12,6 +12,8 @@ import os
 import sys
 from scipy import stats
 from scipy import interp
+from IPython import display
+import ipywidgets as widgets
 from itertools import islice
 import itertools
 
@@ -264,7 +266,11 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
     pass
 
 
-def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False):
+# --------------------------------------------------------------------------- #
+# show_frequency_distribution_predictor
+# --------------------------------------------------------------------------- #
+
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None):
     
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
@@ -290,23 +296,118 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
         if features_vs_values is not None:
             l = list()
             print(features_vs_values[predictor])
+            revers_dict = dict()
             for k, v in features_vs_values[predictor].items():
+                revers_dict[v] = k
                 for val in predictor_count.index:
                     if val == v:
                         l.append(k)
                         break
             if grid_display is True: pass
             else:
-                sns.barplot(l, predictor_count.values, alpha=0.9)
+                # f = plt.figure(figsize=(10,3))
+                
+                if hue is not None:
+                    f, axs = plt.subplots(1,3, figsize=(15,3))
+                    sns.barplot(l, predictor_count.values, alpha=0.9, ax=axs[0])
+                    axs[0].set_title('Frequency Distribution of %s' % (predictor))
+                    axs[0].set_ylabel('Number of Occurrences', fontsize=12)
+                    axs[0].set_xlabel('%s' % (predictor), fontsize=12)
+                    plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1])
+                    plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2])
+                    pass
+                else:
+                    sns.barplot(l, predictor_count.values, alpha=0.9)
+                    plt.title('Frequency Distribution of %s' % (predictor))
+                    plt.ylabel('Number of Occurrences', fontsize=12)
+                    plt.xlabel('%s' % (predictor), fontsize=12)
+                pass
+            pass
         else:
-            sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
-        
-        plt.title('Frequency Distribution of %s' % (predictor))
-        plt.ylabel('Number of Occurrences', fontsize=12)
-        plt.xlabel('%s' % (predictor), fontsize=12)
-        plt.show()
+            if hue is not None:
+                sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
+                df.pivot(columns=hue)[predictor].plot(kind = 'hist', stacked=True)
+            else:
+                sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
+                plt.title('Frequency Distribution of %s' % (predictor))
+                plt.ylabel('Number of Occurrences', fontsize=12)
+                plt.xlabel('%s' % (predictor), fontsize=12)
+                pass
+    plt.show()
     pass
 
+def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None):
+    
+    revers_dict_hue= dict()
+    for k, v in features_vs_values[hue].items():
+        revers_dict_hue[v] = k
+    revers_dict = dict()
+    for k, v in features_vs_values[predictor].items():
+        revers_dict[v] = k
+    
+    res = df.groupby(predictor)[hue].value_counts()
+    tmp_res = res.unstack(0).values
+    tmp_index = list(map(lambda xi: revers_dict_hue[xi], res.unstack(0).index.values))
+    tmp_col = list(map(lambda xi: revers_dict[xi], res.unstack(0).columns))
+
+    df_tmp = pd.DataFrame(tmp_res, columns=tmp_col, index=tmp_index).head()
+    if verbose == 1:
+        print(df_tmp.head())
+    df_tmp.plot.bar(stacked=True, ax=ax)
+    ax.set_title('Frequency Distribution of %s over %s' % (predictor, hue))
+    ax.set_ylabel('Number of Occurrences', fontsize=12)
+    ax.set_xlabel('%s' % (hue,), fontsize=12)
+    pass
+
+def create_widget_list_obj(list_objs):
+    res_list = []
+    for item in list_objs:
+        widget = widgets.Output()
+        with widget: display.display(item); pass
+        res_list.append(widget)
+        pass
+    hbox = widgets.HBox(res_list)
+    return hbox
+
+
+def plot_hue_hist(hue, predictor, predictor_count, features_vs_values, df, revers_dict):
+    revers_dict_hue= dict()
+    for k, v in features_vs_values[hue].items():
+        revers_dict_hue[v] = k
+        # df.pivot(columns=hue)[predictor].plot(kind = 'hist', stacked=True)
+    data = dict()
+    for pos, idx in enumerate(predictor_count.index):
+        val = df.groupby(predictor).get_group(idx)[hue]
+        # data_tmp = map(lambda xi: revers_dict_hue[xi], val.values)
+        # val_tmp = pd.Series(data=data_tmp, index=val.index)
+        key = revers_dict[idx]
+        data[key] = val #_tmp
+        pass
+    print(pd.DataFrame(data).head())
+    pd.DataFrame(data).plot(kind = 'hist', stacked=True,)
+    return
+    # pd.DataFrame(data).size().unstack().plot(kind='bar', stacked=True, figsize=(15, 5))
+    plt.title('Frequency Distribution of %s over %s' % (predictor, hue))
+    plt.ylabel('Number of Occurrences', fontsize=12)
+    plt.xlabel('%s' % (hue), fontsize=12)
+    plt.show()
+    data = dict()
+    for pos, idx in enumerate(df[hue].value_counts().index):
+        val = df.groupby(hue).get_group(idx)[predictor]
+        key = revers_dict_hue[idx]
+        data[key] = val
+        pass
+    pd.DataFrame(data).plot(kind = 'hist', stacked=True,)
+    # pd.DataFrame(data).size().unstack().plot(kind='bar', stacked=True, figsize=(15, 5))
+    plt.title('Frequency Distribution of %s over %s' % (hue, predictor))
+    plt.ylabel('Number of Occurrences', fontsize=12)
+    plt.xlabel('%s' % (predictor), fontsize=12)
+    plt.show()
+    pass
+
+# --------------------------------------------------------------------------- #
+# Others
+# --------------------------------------------------------------------------- #
 
 def show_histograms_from_heatmap_corr_matrix(corr_matrix, num_rows=None, row_names=None):
     assert type(corr_matrix) is pd.DataFrame, f"corr_matrix's type is {type(corr_matrix)}, that is not of type pd.DataFrame as requested"
