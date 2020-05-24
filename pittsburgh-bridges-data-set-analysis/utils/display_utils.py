@@ -270,7 +270,7 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
 # show_frequency_distribution_predictor
 # --------------------------------------------------------------------------- #
 
-def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None):
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0):
     
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
@@ -294,27 +294,31 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
         predictor_count = df[predictor].value_counts()
 
         if features_vs_values is not None:
-            l = list()
+            l = [None] * len(predictor_count.index)
             print(features_vs_values[predictor])
             revers_dict = dict()
             for k, v in features_vs_values[predictor].items():
                 revers_dict[v] = k
-                for val in predictor_count.index:
+                for ii, val in enumerate(predictor_count.index):
                     if val == v:
-                        l.append(k)
+                        l[ii] = k
                         break
             if grid_display is True: pass
             else:
                 # f = plt.figure(figsize=(10,3))
-                
+                print(predictor_count)
+                print(l)
                 if hue is not None:
-                    f, axs = plt.subplots(1,3, figsize=(15,3))
+                    _, axs = plt.subplots(1,3, figsize=(15,3))
                     sns.barplot(l, predictor_count.values, alpha=0.9, ax=axs[0])
                     axs[0].set_title('Frequency Distribution of %s' % (predictor))
                     axs[0].set_ylabel('Number of Occurrences', fontsize=12)
                     axs[0].set_xlabel('%s' % (predictor), fontsize=12)
-                    plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1])
-                    plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2])
+                    df_1 = plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1], verbose=verbose)
+                    df_2 = plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2], verbose=verbose)
+                    if verbose == 1:
+                        res = create_widget_list_obj([df_1, df_2])
+                        display.display(res)
                     pass
                 else:
                     sns.barplot(l, predictor_count.values, alpha=0.9)
@@ -357,7 +361,7 @@ def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None)
     ax.set_title('Frequency Distribution of %s over %s' % (predictor, hue))
     ax.set_ylabel('Number of Occurrences', fontsize=12)
     ax.set_xlabel('%s' % (hue,), fontsize=12)
-    pass
+    return df_tmp
 
 def create_widget_list_obj(list_objs):
     res_list = []
