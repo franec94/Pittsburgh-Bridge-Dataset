@@ -310,7 +310,8 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
                 print(l)
                 if hue is not None:
                     _, axs = plt.subplots(1,3, figsize=(15,3))
-                    sns.barplot(l, predictor_count.values, alpha=0.9, ax=axs[0])
+                    ax = sns.barplot(l, predictor_count.values, alpha=0.9, ax=axs[0])
+                    print(ax.get_facecolor())
                     axs[0].set_title('Frequency Distribution of %s' % (predictor))
                     axs[0].set_ylabel('Number of Occurrences', fontsize=12)
                     axs[0].set_xlabel('%s' % (predictor), fontsize=12)
@@ -340,7 +341,7 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
     plt.show()
     pass
 
-def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None):
+def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None, colors=None):
     
     revers_dict_hue= dict()
     for k, v in features_vs_values[hue].items():
@@ -357,7 +358,10 @@ def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None)
     df_tmp = pd.DataFrame(tmp_res, columns=tmp_col, index=tmp_index).head()
     if verbose == 1:
         print(df_tmp.head())
-    df_tmp.plot.bar(stacked=True, ax=ax)
+    if colors is None:
+        df_tmp.plot.bar(stacked=True, ax=ax)
+    else:
+        df_tmp.plot.bar(stacked=True, ax=ax, color=colors)
     ax.set_title('Frequency Distribution of %s over %s' % (predictor, hue))
     ax.set_ylabel('Number of Occurrences', fontsize=12)
     ax.set_xlabel('%s' % (hue,), fontsize=12)
