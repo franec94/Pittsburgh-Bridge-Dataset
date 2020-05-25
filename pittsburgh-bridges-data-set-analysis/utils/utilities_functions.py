@@ -310,6 +310,16 @@ def create_widget_list_df(df_list):
     hbox = widgets.HBox(res_list)
     return hbox
 
+def create_widget_list_df_vertical(df_list):
+    res_list = []
+    for df in df_list:
+        widget = widgets.Output()
+        with widget: display.display(df); pass
+        res_list.append(widget)
+        pass
+    vbox = widgets.VBox(res_list)
+    return vbox
+
 
 def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
     res = list(set(df1.columns).intersection(set(df2.columns)))
@@ -337,3 +347,19 @@ def reshape_dfs_acc(list_df, num_col=4, n_cp_list=[2, 9, 11]):
         df = pd.DataFrame(data=data, columns=columns_names, index=estimators_names)
         updated_list.append(df)
     return updated_list
+
+
+def show_df_with_mean_at_bottom(df):
+    # show_df_with_mean_at_bottom(df_strfd) # df_strfd.head(df_strfd.shape[0])
+    def s2f(a_str):
+        if a_str.startswith("("):
+            return float(a_str[5:])
+        return float(a_str)
+    result = df.applymap(s2f).mean(axis=0)
+    def f2s(a_num):
+        return "%.2f" % (a_num, )
+    data = np.array(list(map(f2s, result.values)))
+    df_tmp = pd.DataFrame(data=[data], columns=df.columns, index=["Mean Values"])
+    vbox = create_widget_list_df_vertical([df, df_tmp])
+    display.display(vbox)
+    pass

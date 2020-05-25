@@ -22,6 +22,7 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 import plotly.express as px
+import matplotlib.image as mpimg
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
@@ -306,12 +307,12 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
             if grid_display is True: pass
             else:
                 # f = plt.figure(figsize=(10,3))
-                print(predictor_count)
-                print(l)
+                # print(predictor_count)
+                # print(l)
                 if hue is not None:
                     _, axs = plt.subplots(1,3, figsize=(15,3))
                     ax = sns.barplot(l, predictor_count.values, alpha=0.9, ax=axs[0])
-                    print(ax.get_facecolor())
+                    # print(ax.get_facecolor())
                     axs[0].set_title('Frequency Distribution of %s' % (predictor))
                     axs[0].set_ylabel('Number of Occurrences', fontsize=12)
                     axs[0].set_xlabel('%s' % (predictor), fontsize=12)
@@ -357,7 +358,8 @@ def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None,
 
     df_tmp = pd.DataFrame(tmp_res, columns=tmp_col, index=tmp_index).head()
     if verbose == 1:
-        print(df_tmp.head())
+        # print(df_tmp.head())
+        pass
     if colors is None:
         df_tmp.plot.bar(stacked=True, ax=ax)
     else:
@@ -986,3 +988,26 @@ def prepare_data_corr_matrix_pie_finer_analysis(corr_matrix):
 # --------------------------------------------------------------------------- #
 # - https://plotly.com/python/pie-charts/
 # - http://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
+
+
+# --------------------------------------------------------------------------- #
+# Show Bridges:
+# --------------------------------------------------------------------------- #
+def show_bridges_types_images():
+    src_images_types_bridges = os.path.join("images", "type_bridges")
+    onlyfiles = [f for f in os.listdir(src_images_types_bridges) if os.path.isfile(os.path.join(src_images_types_bridges, f))]
+    bridges_types = list(map(lambda xi: xi.split("-")[1], onlyfiles))
+    fig = plt.figure(figsize=(15, 10))
+    pos, row = 0, 0
+    for ii, a_file_name in enumerate(onlyfiles):
+        pos = ii % 4 + 1
+        if ii % 4 == 0:
+            row = row + 1
+        ax = fig.add_subplot(row, 4, pos)
+        # print(ii, a_file_name, bridges_types[ii])
+        image = mpimg.imread(os.path.join(src_images_types_bridges, a_file_name))
+        imgplot = plt.imshow(image)
+        ax.set_title(f"{bridges_types[ii]}")
+        pass
+    plt.show()
+    pass
