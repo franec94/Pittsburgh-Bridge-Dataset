@@ -322,6 +322,10 @@ def create_widget_list_df_vertical(df_list):
 
 
 def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
+    if df2 is None:
+        return df1
+    elif df1 is None:
+        return df2
     res = list(set(df1.columns).intersection(set(df2.columns)))
     df_res = pd.concat([df1[res], df2[res]], axis=axis, ignore_index=ignore_index)
     if df1.index.equals(df2.index) is False:

@@ -724,11 +724,14 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
     df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names)
     return df_grid_searches
 
-def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None):
+def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None, ignore_func=False):
     # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
 
     if kernels_list is None:
         kernels_list = ['linear', 'poly', 'rbf', 'cosine', 'sigmoid']
+    if ignore_func is True:
+        grid_list = [None] * len(kernels_list)
+        return grid_list
     errors_list = []
     grid_list = []
 
