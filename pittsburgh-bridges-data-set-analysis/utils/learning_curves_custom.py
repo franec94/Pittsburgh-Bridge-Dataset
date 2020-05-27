@@ -270,6 +270,9 @@ def get_values_not_nan(train_sizes, train_scores_mean, validation_scores_mean):
 
 def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
                         n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
+    """
+    https://scikit-learn.org/stable/auto_examples/model_selection/plot_learning_curve.html
+    """
     if axes is None:
         _, axes = plt.subplots(1, 3, figsize=(20, 5))
 
