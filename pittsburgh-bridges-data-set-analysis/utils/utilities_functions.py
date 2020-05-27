@@ -174,7 +174,7 @@ def add_records(data, cv_list, res_kf, res_loo, res_sscv):
     return data
 
 
-def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest, verbose=0):
+def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest=None, verbose=0):
     if verbose == 1:
         print('KernelPCA')
         print('-' * 100)
@@ -192,6 +192,9 @@ def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest, verbose=0):
         print('KernelPCA - Transform')
         print('-' * 100)   
     Xtrain_transformed = kernel_pca.transform(Xtrain)
+
+    if Xtest is None:
+        return Xtrain_transformed, None
     Xtest_transformed = kernel_pca.transform(Xtest)
 
     return Xtrain_transformed, Xtest_transformed
@@ -309,6 +312,7 @@ def create_widget_list_df(df_list):
         pass
     hbox = widgets.HBox(res_list)
     return hbox
+
 
 def create_widget_list_df_vertical(df_list):
     res_list = []

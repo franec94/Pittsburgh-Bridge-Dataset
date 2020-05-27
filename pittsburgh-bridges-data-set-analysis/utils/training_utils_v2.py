@@ -142,6 +142,7 @@ def get_classifier(type_classifier, params_classifier):
     print(clf)
     return clf
 
+
 def evaluate_best_current_model_(X, y, pca, gs_clf, test_size, random_state, type_classifier):
     X_train_tmp, X_test_tmp, y_train_tmp, y_test_tmp = train_test_split(
                 X, y, test_size=50, random_state=random_state)
@@ -160,6 +161,7 @@ def evaluate_best_current_model_(X, y, pca, gs_clf, test_size, random_state, typ
     print(metrics.confusion_matrix(y_test_tmp, tmp_predicted))
     print(f"{np.mean(tmp_predicted == y_test_tmp)}")
     pass
+
 
 def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_state, cv=7, iid=False, n_jobs=-1, sss_flag=False, type_classifier=None):
     '''Performs grid search technique, against a defined classifier or pipeline object and a dictionary of hyper-params.
@@ -266,6 +268,7 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
         else: pass #print(err)
     pass
 
+
 def plot_roc_crossval(X, y):
     n_samples, n_features = X.shape
 
@@ -363,6 +366,7 @@ def sgd_classifier_grid_search(X, y,  num_features=None, parameters_sgd_classifi
         type_classifier=type_classifier)
     pass
 
+
 def svm_linear_classifier_grid_search(X, y, kernel_type=None, num_features=None, parameters_svm=None):
     test_size, random_state = 0.25, 50
 
@@ -415,6 +419,7 @@ def svm_linear_classifier_grid_search(X, y, kernel_type=None, num_features=None,
         type_classifier=type_classifier)
     pass
 
+
 def naive_bayes_classifier_grid_search(X, y, num_features=None, parmas_naive_bayes=None):
     
     type_classifier = 'naive-bayes'
@@ -439,6 +444,7 @@ def naive_bayes_classifier_grid_search(X, y, num_features=None, parmas_naive_bay
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)
     pass
+
 
 def decision_tree_classifier_grid_search(X, y, num_features=None, parmas_decision_tree=None):
     
@@ -468,6 +474,7 @@ def decision_tree_classifier_grid_search(X, y, num_features=None, parmas_decisio
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)
     pass
+
 
 def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_forest=None):
     
@@ -547,6 +554,7 @@ def fit_all_by_n_components(
             df = pd.concat([df,res_df2])
     return dfs_list, df
 
+
 def fit_by_n_components(
     estimator,
     X, y,
@@ -595,7 +603,7 @@ def fit_by_n_components(
                 print('=' * 100)
 
             # Prepare data
-            Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
+            Xtrain_transformed, _ = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest) # Xtest_transformed
 
             # Perform CV, LOOCV, Stratified CV
             # Once gotten all results exploit them to fill data object list
@@ -688,6 +696,7 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
             pprint(errors_list)
         pass
 
+
 def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False, avoid_func=False):
     # debug_var = False
     if avoid_func is True:
@@ -723,6 +732,7 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
             grid_res_list.append(grid_res)
     df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names)
     return df_grid_searches
+
 
 def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None, ignore_func=False):
     # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)

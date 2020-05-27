@@ -342,6 +342,7 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
     plt.show()
     pass
 
+
 def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None, colors=None):
     
     revers_dict_hue= dict()
@@ -368,6 +369,7 @@ def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None,
     ax.set_ylabel('Number of Occurrences', fontsize=12)
     ax.set_xlabel('%s' % (hue,), fontsize=12)
     return df_tmp
+
 
 def create_widget_list_obj(list_objs):
     res_list = []
@@ -576,7 +578,7 @@ def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None,
 # CV Results Plots
 # --------------------------------------------------------------------------- #
 
-def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_pairs=False, show_figure=False):
+def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_err_lc=False, show_pairs=False, show_figure=False):
 
     try: os.makedirs(plot_dest)
     except: pass
@@ -603,7 +605,10 @@ def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=No
             acc_list = dataset[col_acc].values[:n]
             std_list = dataset[col_std].values[:n]
         
-            plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
+            if show_err_lc is True:
+                plt.plot(range(len(acc_list)), [(1-float(xi)) for xi in acc_list] , label='linear')
+            else:
+                plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
 
             for jj, (conf_interval, val) in enumerate(zip(std_list, acc_list)):
                 conf_interval = conf_interval[-4:]
