@@ -86,6 +86,7 @@ def learning_curves_by_kernels(
     n_components=2,
     pca_kernels_list=None, cv_list=None,
     show_plots=False, plot_dest="figures",
+    scoring='accuracy',
     verbose=0, by_pairs=False, figsize=(10, 3), savefigs=False, figs_dest='learning_curve'):
 
     try: os.makedirs(figs_dest)
@@ -111,6 +112,7 @@ def learning_curves_by_kernels(
             n_components=n_components,
             verbose=verbose,
             by_pairs=by_pairs,
+            scoring=scoring,
             savefigs=savefigs, figs_dest=os.path.join(figs_dest, kernel)
         )
         pass
@@ -123,13 +125,14 @@ def learning_curves_by_components(
     n_components=2,
     pca_kernel='linear', cv_list=None,
     show_plots=False, plot_dest="figures",
+    scoring='accuracy',
     verbose=0, by_pairs=False, figsize=(10, 3), title='Learning Curve By Component', savefigs=False, figs_dest=None):
 
     # assert type(X) is np.ndarray, f"Error: Feature Matrix X's type is not np.ndarray but instead is an instance of type: {type(X)}"
     # assert type(y) is np.ndarray, f"Error: target array y's type is not np.ndarray but instead is an instance of type: {type(y)}"
 
 
-    try: os.makedirs(figs_dest)
+    try: os.makedirs(os.path.join(figs_dest, scoring))
     except: pass
 
     if type(estimators_list) is not list:
@@ -158,8 +161,15 @@ def learning_curves_by_components(
                 else:
                     ax = axs[1]
                     fig_name = f"{fig_name}_{estimator_name}"
+            else:
+                # fig, axes = plt.subplots(1, 1, figsize=(10, 15))
+                fig, axes = plt.subplots(1, 1)
+                try:
+                    ax = axes[0]
+                except: ax = axes
 
             title = f"Learning Curve: {estimator_name}|#PCs:{n_components}|Pca kernel:{pca_kernel}"
+            """
             learning_curves(
                 estimator=estimator_obj, \
                 X=copy.deepcopy(X),
@@ -167,12 +177,16 @@ def learning_curves_by_components(
                 n_components=n_components,
                 title=title,
                 kernel=pca_kernel,
+                scoring=scoring,
                 train_sizes=train_sizes, cv=cv,
                 ax=ax,
             )
-
+            """
+            fig_name = f"{estimator_name}"
+            Xtrain_transformed_, _ = KernelPCA_transform_data(n_components, pca_kernel, X, None, verbose=0)
+            plot_learning_curve(estimator_obj, title, Xtrain_transformed_, y, axes=ax, ylim=None, cv=5,)
             if ii % 2 == 1 or flag is True:
-                fig_name = os.path.join(figs_dest, f"fig_{pos}_{fig_name}.png")
+                fig_name = os.path.join(figs_dest, scoring, f"fig_{pos}_{fig_name}.png")
                 pos = pos + 1
                 plt.savefig(fig_name)
                 pass
@@ -198,10 +212,15 @@ def learning_curves(
         train_sizes=train_sizes,
         cv=cv,
         scoring=scoring)
-    
-    train_scores_mean = train_scores.mean(axis = 1)
-    validation_scores_mean = validation_scores.mean(axis = 1)
-    
+
+    if scoring == 'neg_log_loss':
+        train_scores_mean = -train_scores.mean(axis = 1)
+        validation_scores_mean = -validation_scores.mean(axis = 1)
+        pass
+    else:
+        train_scores_mean = train_scores.mean(axis = 1)
+        validation_scores_mean = validation_scores.mean(axis = 1)
+        pass
     train_sizes, train_scores_mean, validation_scores_mean = \
         get_values_not_nan(train_sizes, train_scores_mean, validation_scores_mean)
 
@@ -248,3 +267,61 @@ def get_values_not_nan(train_sizes, train_scores_mean, validation_scores_mean):
 
     unique_idxs = np.intersect1d(idx_train, idx_val)
     return train_sizes[unique_idxs], train_scores_mean[unique_idxs], validation_scores_mean[unique_idxs]
+
+def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
+                        n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
+    if axes is None:
+        _, axes = plt.subplots(1, 3, figsize=(20, 5))
+
+    try:
+        axes[0].set_title(title)
+        if ylim is not None:
+            axes[0].set_ylim(*ylim)
+        axes[0].set_xlabel("Training examples")
+        axes[0].set_ylabel("Score")
+    except:
+        axes.set_title(title)
+        if ylim is not None:
+            axes.set_ylim(*ylim)
+        axes.set_xlabel("Training examples")
+        axes.set_ylabel("Score")
+
+    train_sizes, train_scores, test_scores, fit_times, _ = \
+        learning_curve(estimator, X, y, cv=cv, n_jobs=n_jobs,
+                       train_sizes=train_sizes,
+                       return_times=True)
+    train_scores_mean = np.mean(train_scores, axis=1)
+    train_scores_std = np.std(train_scores, axis=1)
+    test_scores_mean = np.mean(test_scores, axis=1)
+    test_scores_std = np.std(test_scores, axis=1)
+    fit_times_mean = np.mean(fit_times, axis=1)
+    fit_times_std = np.std(fit_times, axis=1)
+
+    # Plot learning curve
+    try:
+        axes[0].grid()
+        axes[0].fill_between(train_sizes, train_scores_mean - train_scores_std,
+                         train_scores_mean + train_scores_std, alpha=0.1,
+                         color="r")
+        axes[0].fill_between(train_sizes, test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std, alpha=0.1,
+                         color="g")
+        axes[0].plot(train_sizes, train_scores_mean, 'o-', color="r",
+                 label="Training score")
+        axes[0].plot(train_sizes, test_scores_mean, 'o-', color="g",
+                 label="Cross-validation score")
+        axes[0].legend(loc="best")
+    except:
+        axes.grid()
+        axes.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                         train_scores_mean + train_scores_std, alpha=0.1,
+                         color="r")
+        axes.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std, alpha=0.1,
+                         color="g")
+        axes.plot(train_sizes, train_scores_mean, 'o-', color="r",
+                 label="Training score")
+        axes.plot(train_sizes, test_scores_mean, 'o-', color="g",
+                 label="Cross-validation score")
+        axes.legend(loc="best")
+    return
