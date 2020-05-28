@@ -213,9 +213,10 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             # print(classification_report(y_true, y_pred))
             # df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
             df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
-            print(df)
+            # print(df)
+            # display.display(df)
             df_list.append(df)
-            print()
+            # print()
             pass
         pass
     

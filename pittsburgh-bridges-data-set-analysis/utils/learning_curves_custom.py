@@ -118,6 +118,7 @@ def learning_curves_by_kernels(
         pass
     pass
 
+
 def learning_curves_by_components(
     estimators_list, estimators_names,
     X, y,
@@ -199,6 +200,7 @@ def learning_curves_by_components(
         plt.show()
     pass
 
+
 def learning_curves(
     estimator,
     X, y,
@@ -247,6 +249,7 @@ def learning_curves(
         ax.legend()
     pass
 
+
 def get_values_not_nan(train_sizes, train_scores_mean, validation_scores_mean):
     train_sizes = np.array(list(train_sizes))
     train_scores_mean = np.array(list(train_scores_mean))
@@ -268,6 +271,7 @@ def get_values_not_nan(train_sizes, train_scores_mean, validation_scores_mean):
 
     unique_idxs = np.intersect1d(idx_train, idx_val)
     return train_sizes[unique_idxs], train_scores_mean[unique_idxs], validation_scores_mean[unique_idxs]
+
 
 def plot_learning_curve(estimator, title, X, y, axes=None, ylim=None, cv=None,
                         n_jobs=None, train_sizes=np.linspace(.1, 1.0, 5)):
