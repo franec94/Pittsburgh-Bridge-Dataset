@@ -184,7 +184,8 @@ def learning_curves_by_components(
             """
             fig_name = f"{estimator_name}"
             Xtrain_transformed_, _ = KernelPCA_transform_data(n_components, pca_kernel, X, None, verbose=0)
-            plot_learning_curve(estimator_obj, title, Xtrain_transformed_, y, axes=ax, ylim=None, cv=5,)
+            # plot_learning_curve(estimator_obj, title, Xtrain_transformed_, y, axes=ax, ylim=None, cv=5,train_sizes=np.linspace(.1, 1.0, 10))
+            plot_learning_curve(estimator_obj, title, Xtrain_transformed_, y, axes=ax, ylim=None, cv=5,train_sizes=train_sizes)
             if ii % 2 == 1 or flag is True:
                 fig_name = os.path.join(figs_dest, scoring, f"fig_{pos}_{fig_name}.png")
                 pos = pos + 1
