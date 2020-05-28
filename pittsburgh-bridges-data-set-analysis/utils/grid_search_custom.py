@@ -221,7 +221,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         pass
     
     # if show_figures is True:
-    fig = plt.figure(figsize=(5, 15))
+    fig = plt.figure(figsize=(15, 5))
     conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
     plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
 
