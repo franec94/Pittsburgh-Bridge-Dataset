@@ -214,18 +214,21 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             # df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
             df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
             # print(df)
-            # display.display(df)
+            display.display(df)
             df_list.append(df)
             # print()
             pass
         pass
     
     # if show_figures is True:
+    fig = plt.figure(figsize=(5, 15))
     conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-    plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures)
+    plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
 
     roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-    auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures)
+    auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+
+    plt.show()
 
     return grid, auc, df_list
 

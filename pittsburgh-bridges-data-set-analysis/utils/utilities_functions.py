@@ -10,15 +10,18 @@ import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns'
 import copy
 from scipy import stats
 from scipy import interp
+from os import listdir; from os.path import isfile, join
 from itertools import islice
 from IPython import display
 import ipywidgets as widgets
 import itertools
+import os; import sys
 
 # Matplotlib pyplot provides plotting API
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
+import matplotlib.image as mpimg
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
@@ -77,29 +80,36 @@ from sklearn.metrics import classification_report
 # Confusion Matirx & Roc Curve Custom
 # --------------------------------------------------------------------------- #
 
-def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png", show_figure=False):
+def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png", show_figure=False, ax=None):
     
     y_model = model.predict(Xtest)
     mat = confusion_matrix(ytest, y_model)
+    if ax is None:
+        fig = plt.figure()
+        sns.heatmap(mat, square=True, annot=True, cbar=False)
+        plt.xlabel('predicted value')
+        plt.ylabel('true value')
+        if title:
+            plt.title(title)
+        plt.savefig(plot_name)
     
-    fig = plt.figure()
-    sns.heatmap(mat, square=True, annot=True, cbar=False)
-    plt.xlabel('predicted value')
-    plt.ylabel('true value')
-    if title:
-        plt.title(title)
-    plt.savefig(plot_name)
-    
-    if show_figure is True:
-        plt.show()
+        if show_figure is True:
+            plt.show()
+        else:
+            plt.close(fig)
     else:
-        plt.close(fig)
+        sns.heatmap(mat, square=True, annot=True, cbar=False, ax=ax)
+        ax.set_xlabel('predicted value')
+        ax.set_ylabel('true value')
+        if title:
+            ax.set_title(title)
+        pass
     pass
 
 
 def plot_roc_curve_custom(model,
     X_test, y_test,
-    label=None, title=None, plot_name="roc_curve.png", show_figure=False):
+    label=None, title=None, plot_name="roc_curve.png", show_figure=False, ax=None):
     
     y_pred = model.predict_proba(X_test)
     # print('y_test', type(y_test)); print('y_pred', type(y_pred));
@@ -114,23 +124,38 @@ def plot_roc_curve_custom(model,
     fpr, tpr, _ = roc_curve(y_test, y_pred)
     roc_auc = auc(fpr, tpr)
     
-    fig = plt.figure()
-    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
-    plt.plot([0, 1], [0, 1], 'k--')
+    if ax is None:
+        fig = plt.figure()
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
+        plt.plot([0, 1], [0, 1], 'k--')
     
-    plt.xlabel('False positive rate')
-    plt.ylabel('True positive rate')
-    if  title:
-        plt.title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
+        plt.xlabel('False positive rate')
+        plt.ylabel('True positive rate')
+        if  title:
+            plt.title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
+        else:
+            plt.title('ROC curve')
+        plt.legend(loc='best')
+        plt.savefig(plot_name)
+        # plt.show()
+        if show_figure is True:
+            plt.show()
+        else:
+            plt.close(fig)
     else:
-        plt.title('ROC curve')
-    # plt.legend(loc='best')
-    plt.savefig(plot_name)
-    # plt.show()
-    if show_figure is True:
-        plt.show()
-    else:
-        plt.close(fig)
+        ax.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
+        ax.plot([0, 1], [0, 1], 'k--')
+    
+        ax.set_xlabel('False positive rate')
+        ax.set_ylabel('True positive rate')
+        if  title:
+            ax.set_title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
+        else:
+            ax.set_title('ROC curve')
+        ax.legend(loc='best')
+        # plt.savefig(plot_name)
+        # plt.show()
+        pass
     return roc_auc
 
 
@@ -370,4 +395,30 @@ def show_df_with_mean_at_bottom(df):
     df_tmp = pd.DataFrame(data=[data], columns=df.columns, index=["Mean Values"])
     vbox = create_widget_list_df_vertical([df, df_tmp])
     display.display(vbox)
+    pass
+
+
+def merge_images_within_dir_(pca_kernels_list, figs_dest):
+    for i, kernel in enumerate(pca_kernels_list):
+        dir_target = os.path.join(figs_dest, kernel)
+        images = [f for f in listdir(dir_target) if isfile(join(dir_target, f))]
+    
+        def starts_with_merged(a_file):
+            return os.path.basename(a_file).startswith("merged") is False
+    
+        images = list(filter(lambda xi: starts_with_merged(xi), images))
+        
+        nrows = len(images) // 2
+        for j, image in enumerate(images):
+            if j % 2 == 0:
+                fig = plt.figure(figsize=(10, 10))
+            ax = fig.add_subplot(1, 2, j % 2 +1)
+            full_path_img = os.path.join(dir_target, image)
+            # print(full_path_img)
+            img = mpimg.imread(full_path_img)
+            plt.imshow(img)
+            pass
+        # full_path_img = os.path.join(dir_target, "merged_learning_curves.png")
+        # plt.savefig(full_path_img)
+        pass
     pass
