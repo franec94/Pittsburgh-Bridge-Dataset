@@ -90,6 +90,7 @@ def perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, 
     # grid_search_stratified_cross_validation(clf_cloned, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, n_splits=3, title=title)
     pass
 
+
 def grid_search_kfold_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest, title=None):
     # K-Fold Cross-Validation
     print()
@@ -125,6 +126,7 @@ def grid_search_kfold_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, y
         pass
     pass
 
+
 def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, ytest,title=None):
     # Stratified-K-Fold Cross-Validation
     print()
@@ -154,6 +156,7 @@ def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, yte
     # plot_roc_curve(grid, Xtest, ytest, label=title, title=title)
     plot_roc_curve(grid, Xtest, ytest)
     pass
+
 
 def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures"):
     # Stratified-K-Fold Cross-Validation
@@ -232,6 +235,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
 
     return grid, auc, df_list
 
+
 def from_class_report_to_df(y_true, y_pred, target_names, support):
     res_report = classification_report(y_true, y_pred, target_names=target_names, output_dict=True)
     indeces_df = list(res_report.keys())
@@ -249,6 +253,7 @@ def from_class_report_to_df(y_true, y_pred, target_names, support):
         pass
     df = pd.DataFrame(data=data, columns=columns_df, index=indeces_df[:])
     return df
+
 
 def create_widget_class_report(y_true, y_pred, target_names, support):
     df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
