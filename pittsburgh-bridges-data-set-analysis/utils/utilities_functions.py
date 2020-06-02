@@ -261,11 +261,16 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
     col_params_names = None
     for _, a_grid_search in enumerate(grid_searchs):
         tmp_res, tmp_auc = [], []
-        for _, (a_grid, _, auc) in enumerate(a_grid_search):
+        for _, (a_grid, _, auc, acc_test) in enumerate(a_grid_search):
             
             best_params_values = list(map(str, a_grid.best_params_.values()))
-            best_score = "%.2f" % (a_grid.best_score_,)
-            tmp_res = ([best_score] + best_params_values)
+            # best_score = "%.2f" % (a_grid.best_score_,)
+            # tmp_res = ([best_score] + best_params_values)
+
+            best_score_tst = "%.2f" % (acc_test,)
+            best_score_train = "%.2f" % (a_grid.best_score_,)
+            
+            tmp_res = ([best_score_train, best_score_tst] + best_params_values)
             tmp_auc.append("%.2f" % (auc,))
 
             col_params_names = list(a_grid.best_params_.keys())
@@ -276,7 +281,7 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
         pass
 
     # col_names = [f'{k} Acc' for k in pca_kernels]
-    col_names = ["Acc"] + col_params_names
+    col_names = ["Acc Train", "Acc Test"] + col_params_names
     indeces = []
     for estimator_name in estimator_names:
         indeces.extend([f'{estimator_name} {k}' for k in pca_kernels])
@@ -300,11 +305,11 @@ def get_indices(class_ith_indeces, chunks=2):
 
 
 def get_data(p_train, p_test, X, y):
-    ytrain_ = np.array([y[ii]for ii in p_train])
-    ytest_ = np.array([y[ii]for ii in p_test])
+    ytrain_ = np.array([y[ii] for ii in p_train])
+    ytest_ = np.array([y[ii] for ii in p_test])
     
-    Xtrain_ = np.array([np.array(X[ii])for ii in p_train])
-    Xtest_ = np.array([np.array(X[ii])for ii in p_test])
+    Xtrain_ = np.array([np.array(X[ii]) for ii in p_train])
+    Xtest_ = np.array([np.array(X[ii]) for ii in p_test])
 
     assert len(ytrain_) == len(Xtrain_), f"Train {len(ytrain_)} != {len(Xtrain_)} Test {len(ytest_)} ?? {len(Xtest_)}" 
     assert len(ytest_) == len(Xtest_),f"Train {len(ytrain_)} ?? {len(Xtrain_)} Test {len(ytest_)} != {len(Xtest_)}" 

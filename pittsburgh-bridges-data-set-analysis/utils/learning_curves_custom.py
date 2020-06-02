@@ -87,8 +87,11 @@ def learning_curves_by_kernels(
     pca_kernels_list=None, cv_list=None,
     show_plots=False, plot_dest="figures",
     scoring='accuracy',
-    verbose=0, by_pairs=False, figsize=(10, 3), savefigs=False, figs_dest='learning_curve'):
+    verbose=0, by_pairs=False, figsize=(10, 3), savefigs=False, figs_dest='learning_curve', ignore_func=False):
 
+    if ignore_func is True:
+        return
+    
     try: os.makedirs(figs_dest)
     except: pass
 

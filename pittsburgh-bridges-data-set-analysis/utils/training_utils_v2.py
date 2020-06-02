@@ -770,18 +770,19 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
             # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
 
             # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-            res_grid, auc, _ = grid_search_stratified_cross_validation( # res_grid, auc, df_list_class_reports
+            res_grid, auc, acc_test, _ = grid_search_stratified_cross_validation( # res_grid, auc, df_list_class_reports
                 estimator, param_grid,
                 X, y,
                 n_components=n_components, kernel=kernel, n_splits=2,
                 title=title, show_figures=show_plots,
                 plot_dest=plot_dest_list[ii],
                 verbose=verbose)
-            grid_list.append((res_grid, kernel, auc))
+            grid_list.append((res_grid, kernel, auc, acc_test))
 
             # if show_plots: pass
         except Exception as err:
             err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
+            raise err
             print(err_msg)
             errors_list.append(err_msg)
             pass

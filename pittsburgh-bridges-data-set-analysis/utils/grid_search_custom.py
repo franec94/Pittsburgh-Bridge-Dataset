@@ -14,6 +14,7 @@ from scipy import stats
 from scipy import interp
 from itertools import islice
 from IPython import display
+from tempfile import TemporaryDirectory
 import ipywidgets as widgets
 import itertools
 
@@ -69,7 +70,12 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import validation_curve
 from sklearn.model_selection import learning_curve
 
+from sklearn.neighbors import KNeighborsTransformer, KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+
 # Import scikit-learn classes: model's evaluation step utility functions.
+from sklearn import metrics
+from sklearn.metrics import make_scorer
 from sklearn.metrics import accuracy_score 
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_roc_curve
@@ -77,6 +83,7 @@ from sklearn.metrics import roc_curve
 from sklearn.metrics import classification_report
 
 from utils.utilities_functions import *
+from utils.display_utils import *
 
 
 def perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title):
@@ -183,6 +190,19 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         grid = GridSearchCV(
             estimator=clf, param_grid=param_grid,
             # scoring=['accuracy', 'f1'],
+            scoring=make_scorer(metrics.accuracy_score),
+            # scoring='%s_macro' % score,
+            # scoring='%s_macro' % score,
+            verbose=0) # cv=skf, verbose=0)
+
+        if type(clf) is sklearn.neighbors.KNeighborsClassifier:
+            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_)
+            pass
+
+        grid = GridSearchCV(
+            estimator=clf, param_grid=param_grid,
+            # scoring=['accuracy', 'f1'],
+            scoring=make_scorer(metrics.accuracy_score),
             # scoring='%s_macro' % score,
             # scoring='%s_macro' % score,
             verbose=0) # cv=skf, verbose=0)
@@ -212,10 +232,11 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
                         % (mean, std * 2, params))
                 print()
             except: pass
-            y_true, y_pred = ytest_, grid.predict(Xtest_transformed_)
+            y_true, y_pred = ytest_, grid.best_estimator_.predict(Xtest_transformed_)
             # print(classification_report(y_true, y_pred))
             # df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
             df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
+            res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=True)
             # print(df)
             display.display(df)
             df_list.append(df)
@@ -224,16 +245,57 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         pass
     
     # if show_figures is True:
-    fig = plt.figure(figsize=(15, 5))
+    # fig = plt.figure(figsize=(15, 5))
+    fig = plt.figure(figsize=(10, 5))
     conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-    plot_conf_matrix(grid, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+    plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
 
     roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-    auc = plot_roc_curve_custom(grid, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+    auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
 
     plt.show()
 
-    return grid, auc, df_list
+    acc_test = res_clf_report_dict['accuracy']
+
+    return grid, auc, acc_test, df_list
+
+
+def compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain, ytrain):
+    
+    n_neighbors_list = param_grid['n_neighbors']
+    for algorithm in [param_grid['algorithm'][2]]:
+        graph_model = KNeighborsTransformer(n_neighbors=max(n_neighbors_list),
+                                    algorithm=algorithm,
+                                    mode='distance')
+        # classifier_model = KNeighborsClassifier(metric='precomputed')
+        classifier_model = KNeighborsClassifier(metric='precomputed')
+
+        compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, Xtrain, ytrain, algorithm_name=algorithm)
+        pass
+    pass
+
+
+def compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, Xtrain, ytrain, algorithm_name):
+
+    n_neighbors_list = param_grid['n_neighbors']
+    grid_model = None
+    with TemporaryDirectory(prefix="sklearn_graph_cache_") as tmpdir:
+        full_model = Pipeline(steps=[('graph', graph_model), ('classifier', classifier_model)],
+                    memory=tmpdir)
+        param_grid_ = copy.deepcopy(param_grid)
+        del param_grid_['weights']
+        del param_grid_['algorithm']
+        del param_grid_['metric']
+        del param_grid_['leaf_size']
+        keys_new_list = list(map(lambda xi: f"classifier__{xi}", list(param_grid_.keys())))
+        param_grid_ = dict(zip(keys_new_list, list(param_grid_.values())))
+        grid_model = GridSearchCV(estimator=full_model, param_grid=param_grid_, scoring=make_scorer(metrics.accuracy_score),)
+        grid_model.fit(Xtrain, ytrain)
+        pass
+            
+    title = f"{algorithm_name}"
+    show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title=title)
+    pass
 
 
 def from_class_report_to_df(y_true, y_pred, target_names, support):

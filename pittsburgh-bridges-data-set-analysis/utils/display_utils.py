@@ -1016,3 +1016,20 @@ def show_bridges_types_images():
         pass
     plt.show()
     pass
+
+
+def show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title):
+
+    # Plot the results of the grid search.
+    fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+    axes[0].errorbar(x=n_neighbors_list,
+                 y=grid_model.cv_results_['mean_test_score'],
+                 yerr=grid_model.cv_results_['std_test_score'])
+    axes[0].set(xlabel='n_neighbors', title=f'Classification accuracy ({title})')
+    axes[1].errorbar(x=n_neighbors_list, y=grid_model.cv_results_['mean_fit_time'],
+                 yerr=grid_model.cv_results_['std_fit_time'], color='r')
+    axes[1].set(xlabel='n_neighbors', title='Fit time (with caching)')
+    fig.tight_layout()
+    plt.show()
+
+    pass
