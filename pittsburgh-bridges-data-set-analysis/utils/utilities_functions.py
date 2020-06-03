@@ -319,7 +319,7 @@ def get_data(p_train, p_test, X, y):
 def get_stratified_groups(X, y):
 
     # Get N-stratified Groups
-    class_0_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 0, enumerate(y))))
+    class_0_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == -1, enumerate(y))))
     class_1_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 1, enumerate(y))))
 
     p_class0 = get_indices(class_0_indeces)

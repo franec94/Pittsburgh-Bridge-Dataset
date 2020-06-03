@@ -218,8 +218,8 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             # pprint(grid.best_estimator_)
 
             # print()
-            # print('[*] Best Score:')
-            # pprint(grid.best_score_)
+            print('[*] Best Score:')
+            pprint(grid.best_score_)
             pass
             # print("Grid scores on development set:")
             # print()
