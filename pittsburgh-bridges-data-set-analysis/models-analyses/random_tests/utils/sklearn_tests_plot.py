@@ -318,13 +318,10 @@ def test_significance_of_classification_score_by_clfs(
         pass
     pass
 
+
 # =========================================================================================================================
 # Shrinkage covariance estimation: LedoitWolf vs OAS and max-likelihood
 # =========================================================================================================================
-
-# -----------------------------------------------------------------
-# Test with permutations the significance of a classification score
-# -----------------------------------------------------------------
 
 def show_shrinkage_covariance_estimation_via_plot(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa):
     # Plot results
@@ -404,7 +401,7 @@ def show_shrinkage_covariance_estimation_results(X_test, cv, lw, shrinkages, neg
     if ax is None:
         show_shrinkage_covariance_estimation_via_plot(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa)
     else:
-        show_shrinkage_covariance_estimation_via_plot(ax, X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa)
+        show_shrinkage_covariance_estimation_via_ax(ax, X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa)
     pass
 
 
@@ -455,14 +452,68 @@ def compare_diff_approaches_fine_tune(X_train, X_test, shrinkages):
     
     return loglik_lw, loglik_oa, oa, lw, cv
 
-def test_shrinkage_covariance_estimation(avoid_func=False):
+
+def test_shrinkage_covariance_estimation(base_X_train, base_X_test, n_features, ax=None):
+    X_train, X_test, shrinkages, negative_logliks, loglik_real  = compute_likelihood_on_test_data(base_X_train, base_X_test, n_features)
+
+    loglik_lw, loglik_oa, oa, lw, cv = compare_diff_approaches_fine_tune(X_train, X_test, shrinkages)
+
+    show_shrinkage_covariance_estimation_results(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa, ax=ax)
+    pass
+
+
+def try_shrinkage_covariance_estimation(avoid_func=False):
 
     if avoid_func is True: return
 
     base_X_train, base_X_test, n_features, _ = generate_sample_data() # n_samples
-    X_train, X_test, shrinkages, negative_logliks, loglik_real, cv  = compute_likelihood_on_test_data(base_X_train, base_X_test, n_features)
+    test_shrinkage_covariance_estimation(base_X_train, base_X_test, n_features)
+    pass
 
-    loglik_lw, loglik_oa, oa, lw, cv = compare_diff_approaches_fine_tune(X_train, X_test, shrinkages)
+# -----------------------------------------------------------------
+# Shrinkage covariance estimation: LedoitWolf vs OAS and max-likelihood
+# -----------------------------------------------------------------
 
-    show_shrinkage_covariance_estimation_results(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa, ax=None)
+def test_shrinkage_covariance_estimation_by_kernel_Pca(
+    X, y,
+    n_classes, n_components,
+    estimator=SVC(kernel='linear'), cv=StratifiedKFold(2),
+    kernels=None,
+    axes=None, verbose=0,
+    show_fig=True, save_fig=False,
+    default_fig_layout=False,
+    gridshape=None,
+    figsize=(10, 5),
+    stratified_folds=False,
+    test_size=0.33, random_state=42, shuffle=True,
+    title="significance of classification score", fig_name="significance_of_classification_score.png"
+    ):
+
+
+    kernels_list = get_kernels(kernels)
+
+    axes = get_axes(default_fig_layout, len(kernels_list), axes, figsize, gridshape=gridshape)
+
+    for ii, kernel_name in enumerate(kernels_list):
+
+        if stratified_folds is True:
+            Xtrain_, Xtest_, ytrain_, ytest_ = get_stratified_groups(X, y)
+        else:
+            Xtrain_, Xtest_, ytrain_, ytest_ = train_test_split(X, y, test_size=test_size, random_state=random_state, shuffle=shuffle)
+        
+        Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components=n_components, kernel=kernel_name, Xtrain=Xtrain_, Xtest=Xtest_)
+
+        # estimator_name = str(estimator).split('(')[0]
+
+        test_shrinkage_covariance_estimation(base_X_train=Xtrain_transformed, base_X_test=Xtest_transformed, n_features=n_components, ax=axes[ii])
+        """
+        test_significance_of_classification_score(
+            Xtrain_transformed, y, n_classes,
+            estimator=estimator, cv=cv,
+            ax=axes[ii], verbose=verbose,
+            show_fig=show_fig, save_fig=save_fig,
+            title=f"{estimator_name}|{kernel_name.capitalize()}|Pcs # {n_components}: {title}", fig_name=f"{kernel_name}_{fig_name}")
+        """
+        pass
+
     pass
