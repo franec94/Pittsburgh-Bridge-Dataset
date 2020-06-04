@@ -85,6 +85,7 @@ from sklearn.metrics import classification_report
 from utils.utilities_functions import *
 from utils.display_utils import *
 from utils.display_utils import show_C_vs_gamma_params_svm
+from utils.sklearn_tests_plot import *
 
 
 def perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title):
@@ -260,12 +261,47 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     else:
         
         if type(clf) is sklearn.neighbors.KNeighborsClassifier:
-            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_, ax=None)
+            fig = plt.figure(figsize=(10, 5))
+            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_, ax=fig.add_subplot(1, 2, 1))
+
+            test_significance_of_classification_score(
+                Xtest_, ytest_,
+                n_classes=2,
+                estimator=grid.best_estimator_,
+                cv=StratifiedKFold(2),
+                ax=fig.add_subplot(1, 2, 2),
+                verbose=0,
+                show_fig=True, save_fig=False,
+                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+            )
             pass
         elif type(clf) is sklearn.svm.SVC:
             # return None, None, None, None
-            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})', ax=None)
+            fig = plt.figure(figsize=(10, 5))
+            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})', ax=fig.add_subplot(1, 2, 1))
+            test_significance_of_classification_score(
+                Xtest_, ytest_,
+                n_classes=2,
+                estimator=grid.best_estimator_,
+                cv=StratifiedKFold(2),
+                ax=fig.add_subplot(1, 2, 2),
+                verbose=0,
+                show_fig=True, save_fig=False,
+                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+            )
             pass
+        else:
+            test_significance_of_classification_score(
+                Xtest_, ytest_,
+                n_classes=2,
+                estimator=grid.best_estimator_,
+                cv=StratifiedKFold(2),
+                ax=None, verbose=0,
+                show_fig=True, save_fig=False,
+                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+            )
+            pass
+
         
         # fig = plt.figure(figsize=(6, 5))
         fig = plt.figure(figsize=(10, 5))

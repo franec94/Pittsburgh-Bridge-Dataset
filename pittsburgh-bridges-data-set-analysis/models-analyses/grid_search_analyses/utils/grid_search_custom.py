@@ -252,48 +252,59 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     more_plots = type(clf) is sklearn.neighbors.KNeighborsClassifier or type(clf) is sklearn.svm.SVC
     if more_plots is False:
         # fig = plt.figure(figsize=(6, 5))
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(20, 5))
         conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 1))
 
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
+
+        test_significance_of_classification_score(
+                Xtest_transformed_, ytest_,
+                n_classes=2,
+                estimator=grid.best_estimator_,
+                cv=StratifiedKFold(2),
+                ax=fig.add_subplot(1, 3, 3),
+                verbose=1,
+                show_fig=True, save_fig=False,
+                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+            )
+        pass
     else:
-        
         if type(clf) is sklearn.neighbors.KNeighborsClassifier:
             compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_, ax=None)
             pass
         elif type(clf) is sklearn.svm.SVC:
             # return None, None, None, None
-            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})', ax=None)
+            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})')
             pass
+        pass
+
         
         # fig = plt.figure(figsize=(6, 5))
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(20, 5))
         conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 1))
+
 
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
+
+        test_significance_of_classification_score(
+            # Xtest_, ytest_,
+            Xtest_transformed_, ytest_,
+            n_classes=2,
+            estimator=grid.best_estimator_,
+            cv=StratifiedKFold(2),
+            ax=fig.add_subplot(1, 3, 3),
+            verbose=0,
+            show_fig=True, save_fig=False,
+            title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+        )
 
         pass
 
     plt.show()
-
-    test_significance_of_classification_score(
-        Xtest_, ytest_,
-        n_classes=2,
-        n_components=n_components,
-        estimators=grid.best_estimator_,
-        cv=StratifiedKFold(2),
-        kernels=None,
-        axes=None, verbose=0,
-        default_fig_layout=False,
-        figsize=(10, 10),
-        gridshape=(3, 2), # (2, 3) (3, 2) (1, 6) (6, 1)
-        show_fig=True, save_fig=False,
-        title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
-    )
 
     acc_test = res_clf_report_dict['accuracy']
 

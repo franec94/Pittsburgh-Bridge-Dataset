@@ -258,7 +258,7 @@ def test_significance_of_classification_score_by_kernel_Pca(
     axes = get_axes(default_fig_layout, len(kernels_list), axes, figsize, gridshape=gridshape)
 
     for ii, kernel_name in enumerate(kernels_list):
-
+        
         Xtrain_transformed, _ = KernelPCA_transform_data(n_components=n_components, kernel=kernel_name, Xtrain=X)
 
         estimator_name = str(estimator).split('(')[0]
@@ -284,7 +284,7 @@ def test_significance_of_classification_score_by_clfs(
     default_fig_layout=False,
     gridshape=None,
     figsize=(10, 5),
-    title="significance of classification score", fig_name="significance_of_classification_score.png"
+    title="significance of classification score", fig_name="significance_of_classification_score.png",
     ):
 
     if type(estimators) is not list:
@@ -293,19 +293,23 @@ def test_significance_of_classification_score_by_clfs(
         estimators_list = estimators
 
     for _, estimator in enumerate(estimators_list):
-        test_significance_of_classification_score_by_kernel_Pca(
-            X, y,
-            n_classes=n_classes,
-            n_components=n_components,
-            estimator=estimator,
-            cv=cv,
-            kernels=None,
-            axes=None, verbose=0,
-            default_fig_layout=False,
-            figsize=(10, 10),
-            gridshape=gridshape,
-            show_fig=True, save_fig=False,
-            title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
-        )
+        try:
+            test_significance_of_classification_score_by_kernel_Pca(
+                X, y,
+                n_classes=n_classes,
+                n_components=n_components,
+                estimator=estimator,
+                cv=cv,
+                kernels=None,
+                axes=None, verbose=0,
+                default_fig_layout=False,
+                figsize=(10, 10),
+                gridshape=gridshape,
+                show_fig=True, save_fig=False,
+                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+            )
+        except Exception as err:
+            print(str(err))
+            pass
         pass
     pass
