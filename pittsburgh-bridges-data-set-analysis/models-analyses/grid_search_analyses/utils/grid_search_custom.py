@@ -85,6 +85,7 @@ from sklearn.metrics import classification_report
 from utils.utilities_functions import *
 from utils.display_utils import *
 from utils.display_utils import show_C_vs_gamma_params_svm
+from utils.sklearn_tests_plot import *
 
 
 def perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title):
@@ -278,6 +279,21 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         pass
 
     plt.show()
+
+    test_significance_of_classification_score(
+        Xtest_, ytest_,
+        n_classes=2,
+        n_components=n_components,
+        estimators=grid.best_estimator_,
+        cv=StratifiedKFold(2),
+        kernels=None,
+        axes=None, verbose=0,
+        default_fig_layout=False,
+        figsize=(10, 10),
+        gridshape=(3, 2), # (2, 3) (3, 2) (1, 6) (6, 1)
+        show_fig=True, save_fig=False,
+        title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+    )
 
     acc_test = res_clf_report_dict['accuracy']
 
