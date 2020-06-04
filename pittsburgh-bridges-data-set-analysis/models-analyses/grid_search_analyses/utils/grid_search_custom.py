@@ -84,6 +84,7 @@ from sklearn.metrics import classification_report
 
 from utils.utilities_functions import *
 from utils.display_utils import *
+from utils.display_utils import show_C_vs_gamma_params_svm
 
 
 def perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title):
@@ -165,7 +166,7 @@ def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, yte
     pass
 
 
-def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures"):
+def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures", flag_no_computation=False):
     # Stratified-K-Fold Cross-Validation
     if verbose == 1:
         # print()
@@ -195,9 +196,8 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             # scoring='%s_macro' % score,
             verbose=0) # cv=skf, verbose=0)
 
-        if type(clf) is sklearn.neighbors.KNeighborsClassifier:
-            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_)
-            pass
+        if flag_no_computation is True:
+            return None, None, None, None
 
         grid = GridSearchCV(
             estimator=clf, param_grid=param_grid,
@@ -246,12 +246,36 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     
     # if show_figures is True:
     # fig = plt.figure(figsize=(15, 5))
-    fig = plt.figure(figsize=(10, 5))
-    conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-    plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+    # fig = plt.figure(figsize=(10, 5))
 
-    roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-    auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+    more_plots = type(clf) is sklearn.neighbors.KNeighborsClassifier or type(clf) is sklearn.svm.SVC
+    if more_plots is False:
+        # fig = plt.figure(figsize=(6, 5))
+        fig = plt.figure(figsize=(10, 5))
+        conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
+        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+
+        roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
+        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+    else:
+        
+        if type(clf) is sklearn.neighbors.KNeighborsClassifier:
+            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_, ax=None)
+            pass
+        elif type(clf) is sklearn.svm.SVC:
+            # return None, None, None, None
+            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})', ax=None)
+            pass
+        
+        # fig = plt.figure(figsize=(6, 5))
+        fig = plt.figure(figsize=(10, 5))
+        conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
+        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+
+        roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
+        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+
+        pass
 
     plt.show()
 
@@ -260,7 +284,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     return grid, auc, acc_test, df_list
 
 
-def compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain, ytrain):
+def compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain, ytrain, ax=None):
     
     n_neighbors_list = param_grid['n_neighbors']
     for algorithm in [param_grid['algorithm'][2]]:
@@ -270,12 +294,12 @@ def compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain, ytrain):
         # classifier_model = KNeighborsClassifier(metric='precomputed')
         classifier_model = KNeighborsClassifier(metric='precomputed')
 
-        compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, Xtrain, ytrain, algorithm_name=algorithm)
+        compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, Xtrain, ytrain, algorithm_name=algorithm, ax=ax)
         pass
     pass
 
 
-def compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, Xtrain, ytrain, algorithm_name):
+def compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, Xtrain, ytrain, algorithm_name, ax=None):
 
     n_neighbors_list = param_grid['n_neighbors']
     grid_model = None
@@ -294,7 +318,7 @@ def compute_k_neighbors_vs_accuracy(graph_model, classifier_model, param_grid, X
         pass
             
     title = f"{algorithm_name}"
-    show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title=title)
+    show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title=title, ax=ax)
     pass
 
 
