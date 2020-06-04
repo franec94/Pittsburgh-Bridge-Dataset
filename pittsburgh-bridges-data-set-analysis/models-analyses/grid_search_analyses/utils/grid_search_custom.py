@@ -261,6 +261,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
 
         test_significance_of_classification_score(
                 Xtest_transformed_, ytest_,
+                # Xtrain_transformed_, ytrain_,
                 n_classes=2,
                 estimator=grid.best_estimator_,
                 cv=StratifiedKFold(2),
@@ -291,13 +292,13 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
 
         test_significance_of_classification_score(
-            # Xtest_, ytest_,
             Xtest_transformed_, ytest_,
+            # Xtrain_transformed_, ytrain_,
             n_classes=2,
             estimator=grid.best_estimator_,
             cv=StratifiedKFold(2),
             ax=fig.add_subplot(1, 3, 3),
-            verbose=0,
+            verbose=1,
             show_fig=True, save_fig=False,
             title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
         )
