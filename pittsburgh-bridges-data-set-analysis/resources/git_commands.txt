@@ -1,0 +1,19 @@
+git log --cc --stat
+
+git log
+
+git status
+
+git add *
+
+git commit -m "Commit message"
+
+git push origin <destination-brench>
+
+git ls-files
+
+
+git ls-files \
+    | grep -E -v ".*/.*" \
+    | grep -v requirements.txt \
+    | awk '{ system(sprintf("git rm \"%s\"", $0)) }'
