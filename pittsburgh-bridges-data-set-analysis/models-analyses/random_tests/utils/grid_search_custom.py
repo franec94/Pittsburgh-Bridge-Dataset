@@ -252,64 +252,58 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     more_plots = type(clf) is sklearn.neighbors.KNeighborsClassifier or type(clf) is sklearn.svm.SVC
     if more_plots is False:
         # fig = plt.figure(figsize=(6, 5))
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(20, 5))
         conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 1))
 
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
-    else:
-        
-        if type(clf) is sklearn.neighbors.KNeighborsClassifier:
-            fig = plt.figure(figsize=(10, 5))
-            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_, ax=fig.add_subplot(1, 2, 1))
+        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
 
-            test_significance_of_classification_score(
-                Xtest_, ytest_,
+        clf = sklearn.clone(grid.best_estimator_)
+        test_significance_of_classification_score(
+                # Xtest_transformed_, ytest_,
+                Xtrain_transformed_, ytrain_,
                 n_classes=2,
-                estimator=grid.best_estimator_,
+                estimator=clf,
                 cv=StratifiedKFold(2),
-                ax=fig.add_subplot(1, 2, 2),
-                verbose=0,
+                ax=fig.add_subplot(1, 3, 3),
+                verbose=1,
                 show_fig=True, save_fig=False,
                 title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
             )
+        pass
+    else:
+        if type(clf) is sklearn.neighbors.KNeighborsClassifier:
+            compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain_transformed_, ytrain_, ax=None)
             pass
         elif type(clf) is sklearn.svm.SVC:
             # return None, None, None, None
-            fig = plt.figure(figsize=(10, 5))
-            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})', ax=fig.add_subplot(1, 2, 1))
-            test_significance_of_classification_score(
-                Xtest_, ytest_,
-                n_classes=2,
-                estimator=grid.best_estimator_,
-                cv=StratifiedKFold(2),
-                ax=fig.add_subplot(1, 2, 2),
-                verbose=0,
-                show_fig=True, save_fig=False,
-                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
-            )
+            show_C_vs_gamma_params_svm(Xtrain_transformed_, ytrain_, verbose=verbose, title=f'SVM|Pca-kernel({kernel})')
             pass
-        else:
-            test_significance_of_classification_score(
-                Xtest_, ytest_,
-                n_classes=2,
-                estimator=grid.best_estimator_,
-                cv=StratifiedKFold(2),
-                ax=None, verbose=0,
-                show_fig=True, save_fig=False,
-                title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
-            )
-            pass
+        pass
 
         
         # fig = plt.figure(figsize=(6, 5))
-        fig = plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(20, 5))
         conf_matrix_plot_name = os.path.join(plot_dest, "conf_matrix.png")
-        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 1))
+        plot_conf_matrix(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=conf_matrix_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 1))
+
 
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
-        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 2, 2))
+        auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
+
+        clf = sklearn.clone(grid.best_estimator_)
+        test_significance_of_classification_score(
+            # Xtest_transformed_, ytest_,
+            Xtrain_transformed_, ytrain_,
+            n_classes=2,
+            estimator=clf,
+            cv=StratifiedKFold(2),
+            ax=fig.add_subplot(1, 3, 3),
+            verbose=1,
+            show_fig=True, save_fig=False,
+            title="Sign. of Class. Score", fig_name="significance_of_classification_score.png"
+        )
 
         pass
 

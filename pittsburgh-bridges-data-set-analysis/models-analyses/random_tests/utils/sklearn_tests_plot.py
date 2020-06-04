@@ -10,6 +10,7 @@ import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns'
 import copy
 from scipy import stats
 from scipy import interp
+from scipy import linalg
 from os import listdir; from os.path import isfile, join
 from itertools import islice
 from IPython import display
@@ -78,6 +79,9 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_roc_curve
 from sklearn.metrics import roc_curve
 from sklearn.metrics import classification_report
+
+from sklearn.covariance import LedoitWolf, OAS, ShrunkCovariance, \
+    log_likelihood, empirical_covariance
 
 from utils.utilities_functions import *
 
@@ -312,4 +316,153 @@ def test_significance_of_classification_score_by_clfs(
             print(str(err))
             pass
         pass
+    pass
+
+# =========================================================================================================================
+# Shrinkage covariance estimation: LedoitWolf vs OAS and max-likelihood
+# =========================================================================================================================
+
+# -----------------------------------------------------------------
+# Test with permutations the significance of a classification score
+# -----------------------------------------------------------------
+
+def show_shrinkage_covariance_estimation_via_plot(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa):
+    # Plot results
+    fig = plt.figure()
+    plt.title("Regularized covariance: likelihood and shrinkage coefficient")
+    plt.xlabel('Regularization parameter: shrinkage coefficient')
+    plt.ylabel('Error: negative log-likelihood on test data')
+    # range shrinkage curve
+    plt.loglog(shrinkages, negative_logliks, label="Negative log-likelihood")
+
+    plt.plot(plt.xlim(), 2 * [loglik_real], '--r',
+             label="Real covariance likelihood")
+
+    # adjust view
+    lik_max = np.amax(negative_logliks)
+    lik_min = np.amin(negative_logliks)
+    ymin = lik_min - 6. * np.log((plt.ylim()[1] - plt.ylim()[0]))
+    ymax = lik_max + 10. * np.log(lik_max - lik_min)
+    xmin = shrinkages[0]
+    xmax = shrinkages[-1]
+    # LW likelihood
+    plt.vlines(lw.shrinkage_, ymin, -loglik_lw, color='magenta',
+           linewidth=3, label='Ledoit-Wolf estimate')
+    # OAS likelihood
+    plt.vlines(oa.shrinkage_, ymin, -loglik_oa, color='purple',
+           linewidth=3, label='OAS estimate')
+    # best CV estimator likelihood
+    plt.vlines(cv.best_estimator_.shrinkage, ymin,
+           -cv.best_estimator_.score(X_test), color='cyan',
+           linewidth=3, label='Cross-validation best estimate')
+
+    plt.ylim(ymin, ymax)
+    plt.xlim(xmin, xmax)
+    plt.legend()
+
+    plt.show()
+    pass
+
+
+def show_shrinkage_covariance_estimation_via_ax(ax, X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa):
+    # Plot results
+    # fig = plt.figure()
+    ax.set_title("Regularized covariance: likelihood and shrinkage coefficient")
+    ax.set_xlabel('Regularization parameter: shrinkage coefficient')
+    ax.set_ylabel('Error: negative log-likelihood on test data')
+    # range shrinkage curve
+    ax.loglog(shrinkages, negative_logliks, label="Negative log-likelihood")
+
+    ax.plot(ax.set_xlim(), 2 * [loglik_real], '--r',
+             label="Real covariance likelihood")
+
+    # adjust view
+    lik_max = np.amax(negative_logliks)
+    lik_min = np.amin(negative_logliks)
+    ymin = lik_min - 6. * np.log((ax.set_ylim()[1] - ax.set_ylim()[0]))
+    ymax = lik_max + 10. * np.log(lik_max - lik_min)
+    xmin = shrinkages[0]
+    xmax = shrinkages[-1]
+    # LW likelihood
+    ax.vlines(lw.shrinkage_, ymin, -loglik_lw, color='magenta',
+           linewidth=3, label='Ledoit-Wolf estimate')
+    # OAS likelihood
+    ax.vlines(oa.shrinkage_, ymin, -loglik_oa, color='purple',
+           linewidth=3, label='OAS estimate')
+    # best CV estimator likelihood
+    ax.vlines(cv.best_estimator_.shrinkage, ymin,
+           -cv.best_estimator_.score(X_test), color='cyan',
+           linewidth=3, label='Cross-validation best estimate')
+
+    ax.set_ylim(ymin, ymax)
+    ax.set_xlim(xmin, xmax)
+    ax.legend()
+    pass
+
+
+def show_shrinkage_covariance_estimation_results(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa, ax=None):
+    if ax is None:
+        show_shrinkage_covariance_estimation_via_plot(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa)
+    else:
+        show_shrinkage_covariance_estimation_via_plot(ax, X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa)
+    pass
+
+
+def generate_sample_data():
+    # Generate sample data
+    n_features, n_samples = 40, 20
+    np.random.seed(42)
+    base_X_train = np.random.normal(size=(n_samples, n_features))
+    base_X_test = np.random.normal(size=(n_samples, n_features))
+    return base_X_train, base_X_test, n_features, n_samples
+
+
+def compute_likelihood_on_test_data(base_X_train, base_X_test, n_features):
+
+    # Color samples
+    coloring_matrix = np.random.normal(size=(n_features, n_features))
+    X_train = np.dot(base_X_train, coloring_matrix)
+    X_test = np.dot(base_X_test, coloring_matrix)
+    
+    # spanning a range of possible shrinkage coefficient values
+    shrinkages = np.logspace(-2, 0, 30)
+    negative_logliks = [-ShrunkCovariance(shrinkage=s).fit(X_train).score(X_test)
+                    for s in shrinkages]
+
+    # under the ground-truth model, which we would not have access to in real
+    # settings
+    real_cov = np.dot(coloring_matrix.T, coloring_matrix)
+    emp_cov = empirical_covariance(X_train)
+    loglik_real = -log_likelihood(emp_cov, linalg.inv(real_cov))
+    return X_train, X_test, shrinkages, negative_logliks, loglik_real
+
+
+def compare_diff_approaches_fine_tune(X_train, X_test, shrinkages):
+    # Compare different approaches to setting the parameter
+
+    # GridSearch for an optimal shrinkage coefficient
+    tuned_parameters = [{'shrinkage': shrinkages}]
+    cv = GridSearchCV(ShrunkCovariance(), tuned_parameters)
+    cv.fit(X_train)
+
+    # Ledoit-Wolf optimal shrinkage coefficient estimate
+    lw = LedoitWolf()
+    loglik_lw = lw.fit(X_train).score(X_test)
+
+    # OAS coefficient estimate
+    oa = OAS()
+    loglik_oa = oa.fit(X_train).score(X_test)
+    
+    return loglik_lw, loglik_oa, oa, lw, cv
+
+def test_shrinkage_covariance_estimation(avoid_func=False):
+
+    if avoid_func is True: return
+
+    base_X_train, base_X_test, n_features, _ = generate_sample_data() # n_samples
+    X_train, X_test, shrinkages, negative_logliks, loglik_real, cv  = compute_likelihood_on_test_data(base_X_train, base_X_test, n_features)
+
+    loglik_lw, loglik_oa, oa, lw, cv = compare_diff_approaches_fine_tune(X_train, X_test, shrinkages)
+
+    show_shrinkage_covariance_estimation_results(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa, ax=None)
     pass
