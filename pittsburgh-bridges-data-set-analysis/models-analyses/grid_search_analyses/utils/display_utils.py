@@ -12,6 +12,8 @@ import os
 import sys
 from scipy import stats
 from scipy import interp
+from IPython import display
+import ipywidgets as widgets
 from itertools import islice
 import itertools
 
@@ -19,6 +21,8 @@ import itertools
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
+import plotly.express as px
+import matplotlib.image as mpimg
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
@@ -77,6 +81,10 @@ from sklearn.decomposition import PCA, KernelPCA
 # FUNCTIONS
 # =========================================================================== #
 
+# --------------------------------------------------------------------------- #
+# Descriptive Statistics Section
+# --------------------------------------------------------------------------- #
+
 def display_heatmap(corr, dest_figures='figures'):
     '''Dispalyes a heatmap related to the correlation matrix computed for the dataset analysed.'''
     f, ax = plt.subplots(figsize=(10, 8))
@@ -121,6 +129,7 @@ def display_heatmap(corr, dest_figures='figures'):
 
     plt.show()
     pass
+
 
 def show_cum_variance_vs_components(pca, n_components):
     # tot = sum(pca.explained_variance_)
@@ -173,6 +182,7 @@ def show_cum_variance_vs_components(pca, n_components):
 
     return dict(data=data, layout=layout)
 
+
 def show_frequency_distribution_predictors(df, columns_2_avoid=None, features_vs_values=None):
     
     if columns_2_avoid is not None:
@@ -203,6 +213,7 @@ def show_frequency_distribution_predictors(df, columns_2_avoid=None, features_vs
         plt.xlabel('%s' % (predictor), fontsize=12)
         plt.show()
     pass
+
 
 def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None):
     
@@ -255,7 +266,12 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
         pass
     pass
 
-def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None):
+
+# --------------------------------------------------------------------------- #
+# show_frequency_distribution_predictor
+# --------------------------------------------------------------------------- #
+
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0):
     
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
@@ -279,22 +295,131 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
         predictor_count = df[predictor].value_counts()
 
         if features_vs_values is not None:
-            l = list()
+            l = [None] * len(predictor_count.index)
             print(features_vs_values[predictor])
+            revers_dict = dict()
             for k, v in features_vs_values[predictor].items():
-                for val in predictor_count.index:
+                revers_dict[v] = k
+                for ii, val in enumerate(predictor_count.index):
                     if val == v:
-                        l.append(k)
+                        l[ii] = k
                         break
-            sns.barplot(l, predictor_count.values, alpha=0.9)
+            if grid_display is True: pass
+            else:
+                # f = plt.figure(figsize=(10,3))
+                # print(predictor_count)
+                # print(l)
+                if hue is not None:
+                    _, axs = plt.subplots(1,3, figsize=(15,3))
+                    ax = sns.barplot(l, predictor_count.values, alpha=0.9, ax=axs[0])
+                    # print(ax.get_facecolor())
+                    axs[0].set_title('Frequency Distribution of %s' % (predictor))
+                    axs[0].set_ylabel('Number of Occurrences', fontsize=12)
+                    axs[0].set_xlabel('%s' % (predictor), fontsize=12)
+                    df_1 = plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1], verbose=verbose)
+                    df_2 = plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2], verbose=verbose)
+                    if verbose == 1:
+                        res = create_widget_list_obj([df_1, df_2])
+                        display.display(res)
+                    pass
+                else:
+                    sns.barplot(l, predictor_count.values, alpha=0.9)
+                    plt.title('Frequency Distribution of %s' % (predictor))
+                    plt.ylabel('Number of Occurrences', fontsize=12)
+                    plt.xlabel('%s' % (predictor), fontsize=12)
+                pass
+            pass
         else:
-            sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
-        
-        plt.title('Frequency Distribution of %s' % (predictor))
-        plt.ylabel('Number of Occurrences', fontsize=12)
-        plt.xlabel('%s' % (predictor), fontsize=12)
-        plt.show()
+            if hue is not None:
+                sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
+                df.pivot(columns=hue)[predictor].plot(kind = 'hist', stacked=True)
+            else:
+                sns.barplot(predictor_count.index, predictor_count.values, alpha=0.9)
+                plt.title('Frequency Distribution of %s' % (predictor))
+                plt.ylabel('Number of Occurrences', fontsize=12)
+                plt.xlabel('%s' % (predictor), fontsize=12)
+                pass
+    plt.show()
     pass
+
+
+def plot_hue_hist_v2(hue, predictor, features_vs_values, df, verbose=0, ax=None, colors=None):
+    
+    revers_dict_hue= dict()
+    for k, v in features_vs_values[hue].items():
+        revers_dict_hue[v] = k
+    revers_dict = dict()
+    for k, v in features_vs_values[predictor].items():
+        revers_dict[v] = k
+    
+    res = df.groupby(predictor)[hue].value_counts()
+    tmp_res = res.unstack(0).values
+    tmp_index = list(map(lambda xi: revers_dict_hue[xi], res.unstack(0).index.values))
+    tmp_col = list(map(lambda xi: revers_dict[xi], res.unstack(0).columns))
+
+    df_tmp = pd.DataFrame(tmp_res, columns=tmp_col, index=tmp_index).head()
+    if verbose == 1:
+        # print(df_tmp.head())
+        pass
+    if colors is None:
+        df_tmp.plot.bar(stacked=True, ax=ax)
+    else:
+        df_tmp.plot.bar(stacked=True, ax=ax, color=colors)
+    ax.set_title('Frequency Distribution of %s over %s' % (predictor, hue))
+    ax.set_ylabel('Number of Occurrences', fontsize=12)
+    ax.set_xlabel('%s' % (hue,), fontsize=12)
+    return df_tmp
+
+
+def create_widget_list_obj(list_objs):
+    res_list = []
+    for item in list_objs:
+        widget = widgets.Output()
+        with widget: display.display(item); pass
+        res_list.append(widget)
+        pass
+    hbox = widgets.HBox(res_list)
+    return hbox
+
+
+def plot_hue_hist(hue, predictor, predictor_count, features_vs_values, df, revers_dict):
+    revers_dict_hue= dict()
+    for k, v in features_vs_values[hue].items():
+        revers_dict_hue[v] = k
+        # df.pivot(columns=hue)[predictor].plot(kind = 'hist', stacked=True)
+    data = dict()
+    for pos, idx in enumerate(predictor_count.index):
+        val = df.groupby(predictor).get_group(idx)[hue]
+        # data_tmp = map(lambda xi: revers_dict_hue[xi], val.values)
+        # val_tmp = pd.Series(data=data_tmp, index=val.index)
+        key = revers_dict[idx]
+        data[key] = val #_tmp
+        pass
+    print(pd.DataFrame(data).head())
+    pd.DataFrame(data).plot(kind = 'hist', stacked=True,)
+    return
+    # pd.DataFrame(data).size().unstack().plot(kind='bar', stacked=True, figsize=(15, 5))
+    plt.title('Frequency Distribution of %s over %s' % (predictor, hue))
+    plt.ylabel('Number of Occurrences', fontsize=12)
+    plt.xlabel('%s' % (hue), fontsize=12)
+    plt.show()
+    data = dict()
+    for pos, idx in enumerate(df[hue].value_counts().index):
+        val = df.groupby(hue).get_group(idx)[predictor]
+        key = revers_dict_hue[idx]
+        data[key] = val
+        pass
+    pd.DataFrame(data).plot(kind = 'hist', stacked=True,)
+    # pd.DataFrame(data).size().unstack().plot(kind='bar', stacked=True, figsize=(15, 5))
+    plt.title('Frequency Distribution of %s over %s' % (hue, predictor))
+    plt.ylabel('Number of Occurrences', fontsize=12)
+    plt.xlabel('%s' % (predictor), fontsize=12)
+    plt.show()
+    pass
+
+# --------------------------------------------------------------------------- #
+# Others
+# --------------------------------------------------------------------------- #
 
 def show_histograms_from_heatmap_corr_matrix(corr_matrix, num_rows=None, row_names=None):
     assert type(corr_matrix) is pd.DataFrame, f"corr_matrix's type is {type(corr_matrix)}, that is not of type pd.DataFrame as requested"
@@ -310,6 +435,7 @@ def show_histograms_from_heatmap_corr_matrix(corr_matrix, num_rows=None, row_nam
         pass
     pass
 
+
 def show_categorical_predictor_values(df, columns_2_avoid=None, verbose=0):
     
     if columns_2_avoid is not None:
@@ -324,7 +450,8 @@ def show_categorical_predictor_values(df, columns_2_avoid=None, verbose=0):
     for _, predictor in enumerate(columns_2_keep):
         # print(index, predictor)
         labels = df[predictor].astype('category').cat.categories.tolist()
-        # pprint.pprint(predictor, labels)
+        # pprint(predictor)
+        # pprint(labels)
         if verbose == 1:
             print(f"%-{max_len_name}s" % (predictor,), ':', labels)
         if '?' in labels:
@@ -332,6 +459,7 @@ def show_categorical_predictor_values(df, columns_2_avoid=None, verbose=0):
 
     # pass
     return list_columns
+
 
 def display_cumulative_variance_dataset(X, scaler_method=None):
     n_components = X.shape[1]
@@ -359,6 +487,7 @@ def display_cumulative_variance_dataset(X, scaler_method=None):
         print(f"Cumulative varation explained up to {n_components} pcs = {cum_var_exp_up_to_n_pcs}")
     pass
 
+
 def show_pca_1_vs_pca_2_pcaKernel(X, pca_kernels_list, target_col, dataset, n_components=2):
     # pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
     for ii, kernel in enumerate(pca_kernels_list):
@@ -374,6 +503,7 @@ def show_pca_1_vs_pca_2_pcaKernel(X, pca_kernels_list, target_col, dataset, n_co
 
         sns.lmplot("PCA1", "PCA2", hue=target_col, data=df, fit_reg=False)
     pass
+
 
 def show_scatter_plots_pcaKernel(X, pca_kernels_list, target_col, dataset, n_components, dest_dir='figures'):
     # pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
@@ -395,6 +525,7 @@ def show_scatter_plots_pcaKernel(X, pca_kernels_list, target_col, dataset, n_com
         sns_plot.savefig(os.path.join(dest_dir, plot_name))
         pass
     pass
+
 
 def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None, kind=None, corner=None, gmap_levels=None):
     dest_figures, plot_name = 'figures', 'res_scatter_plot.png'
@@ -443,7 +574,11 @@ def show_overall_dataset_scatter_plots(dataset, target_col=None, diag_kind=None,
 
     pass
 
-def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_pairs=False):
+# --------------------------------------------------------------------------- #
+# CV Results Plots
+# --------------------------------------------------------------------------- #
+
+def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=None, figsize=(5, 5), show_err_lc=False, show_pairs=False, show_figure=False):
 
     try: os.makedirs(plot_dest)
     except: pass
@@ -470,7 +605,10 @@ def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=No
             acc_list = dataset[col_acc].values[:n]
             std_list = dataset[col_std].values[:n]
         
-            plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
+            if show_err_lc is True:
+                plt.plot(range(len(acc_list)), [(1-float(xi)) for xi in acc_list] , label='linear')
+            else:
+                plt.plot(range(len(acc_list)), [float(xi) for xi in acc_list] , label='linear')
 
             for jj, (conf_interval, val) in enumerate(zip(std_list, acc_list)):
                 conf_interval = conf_interval[-4:]
@@ -501,10 +639,15 @@ def show_learning_curve(dataset, plot_name, grid_size, plot_dest="figures", n=No
     #plt.subplots_adjust(top=0.92, bottom=0.08, left=0.10, right=0.95, hspace=0.25,
     #                wspace=0.35)
 
+    plt.savefig(os.path.join(plot_dest, plot_name))
     if show_pairs is True:
-        plt.savefig(os.path.join(plot_dest, plot_name))
-        plt.show()
+        if show_figure is True:
+            plt.show()
+    else:
+        if show_figure is True:
+            plt.show()
     pass
+
 
 def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figures", n=None, col_names=None, figsize=(10, 10), show_pairs=False):
     df_res = None
@@ -541,4 +684,352 @@ def show_learning_curve_loo_sscv(dataset, plot_name, grid_size, plot_dest="figur
     df_res_2 = pd.DataFrame(df_res_2.values, columns=names_list) # df_res_2.rename(columns=dict(zip(df_res_2.columns, tmp_list)))
     plot_name = 'loo_stdf_learning_curve.png'
     show_learning_curve(df_res_2, n=df_res_2.shape[0], plot_dest=plot_dest, grid_size=[12, 2], plot_name=plot_name, figsize=figsize, show_pairs=show_pairs)
+    pass
+
+# --------------------------------------------------------------------------- #
+# Pie and Hist Section
+# --------------------------------------------------------------------------- #
+
+def show_pie_charts_corr_matrix(corr_matrix, subplots=False):
+    
+    err_msg_assert = f"Error: input correlation matrix is not of type pd.DataFrame, but acctually is of type {type(corr_matrix)}"
+    assert type(corr_matrix) is pd.DataFrame, err_msg_assert
+
+    colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:brown", "tab:purple"]
+
+    if subplots is True:
+        fig_, axs = plt.subplots(4)
+    data_norm, data = prepare_data_corr_matrix_pie(corr_matrix)
+    if subplots is True:
+        fig = show_pie_chart_corr_matrix(data, colors[:3], subplots, axs[0])
+    else:
+        fig = show_pie_chart_corr_matrix(data, colors[:3])
+
+    data, data_2 = prepare_data_corr_matrix_hist(corr_matrix)
+    if subplots is True:
+        fig = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors[:3], subplots, axs[1])
+    else:
+        fig = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors[:3])
+    
+    data_norm, data = prepare_data_corr_matrix_pie_finer_analysis(corr_matrix)
+    if subplots is True:
+        fig = show_pie_chart_corr_matrix_finer_analysis(data, colors, subplots, axs[2])
+    else:
+        fig = show_pie_chart_corr_matrix_finer_analysis(data, colors)
+
+    colors=["blue", "orange", "green", "red", "purple", "brown"]
+    data, data_2 = prepare_data_corr_matrix_hist_v2(corr_matrix)
+    if subplots is True:
+        fig = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors, subplots, axs[3])
+    else:
+        fig = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors)
+
+    # plt.tight_layout()
+    # plt.show()
+    pass
+
+
+def show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors, title="a histogram for corr matrix", subplots=False, ax=None):
+    # index_tmp = ["weak", "moderate", "strong"]
+    # df = pd.DataFrame(data=data, columns=index_tmp, index=corr_matrix.columns)
+    # plt.figure()
+
+    # dict_vals = dict(corr_matrix.columns, zip(data_2))
+    # df = pd.DataFrame(data=dict_vals)
+    df = pd.DataFrame(data=data_2, columns=["Attribute", "Type Corr"])
+    # f.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar',stacked=True, colors=colors)
+    if subplots is True:
+        fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True, layout=(2,2), subplots=subplots, ax=ax)
+    else:
+        fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True)
+    # plt.show()
+    return fig
+
+
+def show_pie_chart_corr_matrix(data, colors, title="a pie chart for corr matrix", subplots=False, ax=None):
+    index_tmp = ["moderate", "weak", "strong"]
+
+    def make_autopct(values):
+        def my_autopct(pct):
+            total = sum(values)
+            val = int(round(pct*total/100.0))
+            return '{p:.2f}%  ({v:d})'.format(p=pct,v=val)
+        return my_autopct
+
+    index = []
+    for d, i in zip(data, index_tmp):
+        index.append(f"{i}({d*100:.2f}%)" )
+    df = pd.DataFrame(data=data, columns=["Correlation"], index=index)
+    if subplots is True:
+        fig = df.plot.pie(y='Correlation', title=title, figsize=(6, 6), layout=(2,2), autopct=make_autopct(df["Correlation"].values), subplots=subplots, ax=ax)
+    else:
+        # fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(5, 5), autopct="%.2f%%",)
+        fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors)
+    return fig
+
+
+def show_pie_chart_corr_matrix_finer_analysis(data, colors, title="a pie chart for corr matrix", subplots=False, ax=None):
+    """"https://plotly.com/python/pie-charts/"""
+    index_tmp = ["moderate", "weak", "strong"]
+
+    def make_autopct(values):
+        def my_autopct(pct):
+            total = sum(values)
+            val = int(round(pct*total/100.0))
+            return '{p:.2f}%  ({v:d})'.format(p=pct,v=val)
+        return my_autopct
+
+    colors=["tab:blue", "tab:orange", "tab:brown", "tab:green", "tab:red", "tab:purple"]
+
+    index = []
+    labels = []
+    tot = sum(data)
+    for i, ii in enumerate(range(0, len(data)//2)):
+        d = data[ii]
+        i = f"Neg - {index_tmp[i]}"
+        index.append(f"{i}({d * 100 / tot:.2f}%)" )
+        labels.extend([i])
+        pass
+    for i, ii in enumerate(range(len(data)//2, len(data))):
+        d = data[ii]
+        i = f"Pos - {index_tmp[i]}"
+        index.append(f"{i}({d * 100 / tot:.2f}%)" )
+        labels.extend([i])
+        pass
+    df = pd.DataFrame(data=data, columns=["Correlation"], index=index)
+    if subplots is True:
+        fig = df.plot.pie(y='Correlation', title=title, figsize=(6, 6), layout=(2,2), autopct=make_autopct(df["Correlation"].values), subplots=subplots, ax=ax)
+    else:
+        # fig = df.plot.pie(y='Correlation', figsize=(5, 5), autopct='%1.1f%%',)
+        fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors)
+    # fig = px.pie(df, values='pop', names='country', title='Population of European continent')
+    # fig.show()
+    return fig
+
+
+def prepare_data_corr_matrix_pie(corr_matrix):
+    
+    err_msg_assert = f"Error: input correlation matrix is not of type pd.DataFrame, but acctually is of type {type(corr_matrix)}"
+    assert type(corr_matrix) is pd.DataFrame, err_msg_assert
+
+
+    moderate = lambda xi: .5 < xi < .8
+    weak = lambda xi: .5 >= xi
+    strong = lambda xi: xi >= .8
+    
+    cnts = [0] * 3
+    lambdas = [moderate, weak, strong]
+    data_2 = []
+    for ii, row in enumerate(corr_matrix.values):
+        if ii == 0:
+            filter_indices = range(1, len(row))
+        elif ii == len(row) - 1:
+            # filter_indices = range(0, len(row)-1)
+            break
+        else:
+            # filter_indices = list(range(0, ii-1)) + list(range(ii+1, len(row)))
+            filter_indices = list(range(ii+1, len(row)))
+        
+        tmp_row = np.take(np.absolute(row), filter_indices)
+        record = []
+        for ii, lamnda_func in enumerate(lambdas):
+            var = len(list(filter(lamnda_func, tmp_row)))
+            record.append(var)
+            cnts[ii] = cnts[ii] + var
+            pass
+        data_2.append(record)
+        pass
+    from sklearn.preprocessing import Normalizer
+    data = np.array(cnts, ndmin=2)
+    
+    data_norm = Normalizer().fit_transform(X=data[:]).flatten()
+    return data_norm, data.flatten()
+
+
+def prepare_data_corr_matrix_hist(corr_matrix):
+    
+    index_tmp = ["weak", "moderate", "strong"]
+
+    err_msg_assert = f"Error: input correlation matrix is not of type pd.DataFrame, but acctually is of type {type(corr_matrix)}"
+    assert type(corr_matrix) is pd.DataFrame, err_msg_assert
+
+    weak = lambda xi: .5 >= xi
+    moderate = lambda xi: .5 < xi < .8
+    strong = lambda xi: xi >= .8
+    
+    cnts = [0] * 3
+    lambdas = [weak, moderate, strong]
+    data, data_2 = [], []
+    for ii, row in enumerate(corr_matrix.values):
+        if ii == 0:
+            filter_indices = range(1, len(row))
+        elif ii == len(row) - 1:
+            filter_indices = range(0, len(row)-1)
+            break
+        else:
+            filter_indices = list(range(0, ii-1)) + list(range(ii+1, len(row)))
+        
+        tmp_row = np.take(np.absolute(row), filter_indices)
+        record = []
+        record_2 = []
+        for jj, lamnda_func in enumerate(lambdas):
+            var = len(list(filter(lamnda_func, tmp_row)))
+            record.append(var)
+            cnts[jj] = cnts[jj] + var
+
+            if var == 0: continue
+
+            vals = [index_tmp[jj]] * var
+            attr = [list(corr_matrix.columns)[ii]] * var
+            tmp_val = list(map(lambda xi: [xi[0], xi[1]], zip(attr, vals)))
+            record_2.extend(tmp_val)
+
+            pass
+        # print(record)
+        data.append(record)
+        data_2.extend(record_2)
+        pass
+    return data, data_2
+
+
+def prepare_data_corr_matrix_hist_v2(corr_matrix):
+    
+    index_tmp = ["moderate", "strong", "weak"]
+
+    err_msg_assert = f"Error: input correlation matrix is not of type pd.DataFrame, but acctually is of type {type(corr_matrix)}"
+    assert type(corr_matrix) is pd.DataFrame, err_msg_assert
+    
+    index = []
+    for i, ii in enumerate(range(0, 3)):
+        id = f"Neg - {index_tmp[i]}"
+        index.extend([id])
+    for i, ii in enumerate(range(0, 3)):
+        id = f"Pos - {index_tmp[i]}"
+        index.extend([id])
+
+    neg_moderate = lambda xi: -.5 > xi > -.8
+    neg_strong = lambda xi: xi <= -.8
+    neg_weak = lambda xi: -.5 <= xi < 0
+    
+    
+    pos_moderate = lambda xi: .5 < xi < .8
+    pos_strong = lambda xi: xi >= .8
+    pos_weak = lambda xi: .5 >= xi >= 0
+    
+
+    lambdas = [neg_moderate, neg_strong, neg_weak, pos_moderate, pos_strong, pos_weak]
+    
+    cnts = [0] * len(lambdas)
+    data, data_2 = [], []
+    for ii, row in enumerate(corr_matrix.values):
+        if ii == 0:
+            filter_indices = range(1, len(row))
+        elif ii == len(row) - 1:
+            filter_indices = range(0, len(row)-1)
+            break
+        else:
+            filter_indices = list(range(0, ii-1)) + list(range(ii+1, len(row)))
+        
+        tmp_row = np.take(row, filter_indices)
+        record = []
+        record_2 = []
+        for jj, lamnda_func in enumerate(lambdas):
+            var = len(list(filter(lamnda_func, tmp_row)))
+            record.append(var)
+            cnts[jj] = cnts[jj] + var
+            if var == 0: continue
+
+            vals = [index[jj]] * var
+            attr = [list(corr_matrix.columns)[ii]] * var
+            tmp_val = list(map(lambda xi: [xi[0], xi[1]], zip(attr, vals)))
+            
+            record_2.extend(tmp_val)
+            pass
+        # print(record)
+        data.append(record)
+        data_2.extend(record_2)
+        pass
+    return data, data_2
+
+
+def prepare_data_corr_matrix_pie_finer_analysis(corr_matrix):
+    
+    err_msg_assert = f"Error: input correlation matrix is not of type pd.DataFrame, but acctually is of type {type(corr_matrix)}"
+    assert type(corr_matrix) is pd.DataFrame, err_msg_assert
+
+    neg_moderate = lambda xi: -.5 > xi > -.8
+    neg_strong = lambda xi: xi <= -.8
+    neg_weak = lambda xi: -.5 <= xi < 0
+
+    pos_moderate = lambda xi: .5 < xi < .8
+    pos_strong = lambda xi: xi >= .8
+    pos_weak = lambda xi: .5 >= xi >= 0
+    
+
+    lambdas = [neg_moderate, neg_weak, neg_strong, pos_moderate, pos_weak, pos_strong]
+    
+    cnts = [0] * len(lambdas)
+    for ii, row in enumerate(corr_matrix.values):
+        if ii == 0:
+            filter_indices = range(1, len(row))
+        elif ii == len(row) - 1:
+            # filter_indices = range(0, len(row)-1)
+            break
+        else:
+            # filter_indices = list(range(0, ii-1)) + list(range(ii+1, len(row)))
+            filter_indices = list(range(ii+1, len(row)))
+        tmp_row = np.take(row, filter_indices)
+        for ii, lamnda_func in enumerate(lambdas):
+            cnts[ii] = cnts[ii] + len(list(filter(lamnda_func, tmp_row)))
+        pass
+    from sklearn.preprocessing import Normalizer
+    data = np.array(cnts, ndmin=2)
+    
+    data_norm = Normalizer().fit_transform(X=data[:]).flatten()
+    return data_norm, data.flatten()
+
+# --------------------------------------------------------------------------- #
+# Pie Charts in Python:
+# --------------------------------------------------------------------------- #
+# - https://plotly.com/python/pie-charts/
+# - http://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
+
+
+# --------------------------------------------------------------------------- #
+# Show Bridges:
+# --------------------------------------------------------------------------- #
+def show_bridges_types_images():
+    src_images_types_bridges = os.path.join("images", "type_bridges")
+    onlyfiles = [f for f in os.listdir(src_images_types_bridges) if os.path.isfile(os.path.join(src_images_types_bridges, f))]
+    bridges_types = list(map(lambda xi: xi.split("-")[1], onlyfiles))
+    fig = plt.figure(figsize=(15, 10))
+    pos, row = 0, 0
+    for ii, a_file_name in enumerate(onlyfiles):
+        pos = ii % 4 + 1
+        if ii % 4 == 0:
+            row = row + 1
+        ax = fig.add_subplot(row, 4, pos)
+        # print(ii, a_file_name, bridges_types[ii])
+        image = mpimg.imread(os.path.join(src_images_types_bridges, a_file_name))
+        imgplot = plt.imshow(image)
+        ax.set_title(f"{bridges_types[ii]}")
+        pass
+    plt.show()
+    pass
+
+
+def show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title):
+
+    # Plot the results of the grid search.
+    fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+    axes[0].errorbar(x=n_neighbors_list,
+                 y=grid_model.cv_results_['mean_test_score'],
+                 yerr=grid_model.cv_results_['std_test_score'])
+    axes[0].set(xlabel='n_neighbors', title=f'Classification accuracy ({title})')
+    axes[1].errorbar(x=n_neighbors_list, y=grid_model.cv_results_['mean_fit_time'],
+                 yerr=grid_model.cv_results_['std_fit_time'], color='r')
+    axes[1].set(xlabel='n_neighbors', title='Fit time (with caching)')
+    fig.tight_layout()
+    plt.show()
+
     pass

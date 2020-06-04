@@ -10,13 +10,18 @@ import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns'
 import copy
 from scipy import stats
 from scipy import interp
+from os import listdir; from os.path import isfile, join
 from itertools import islice
+from IPython import display
+import ipywidgets as widgets
 import itertools
+import os; import sys
 
 # Matplotlib pyplot provides plotting API
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
+import matplotlib.image as mpimg
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
@@ -74,23 +79,37 @@ from sklearn.metrics import classification_report
 # --------------------------------------------------------------------------- #
 # Confusion Matirx & Roc Curve Custom
 # --------------------------------------------------------------------------- #
-def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png"):
+
+def plot_conf_matrix(model, Xtest, ytest, title=None, plot_name="conf_matrix.png", show_figure=False, ax=None):
     
     y_model = model.predict(Xtest)
     mat = confusion_matrix(ytest, y_model)
+    if ax is None:
+        fig = plt.figure()
+        sns.heatmap(mat, square=True, annot=True, cbar=False)
+        plt.xlabel('predicted value')
+        plt.ylabel('true value')
+        if title:
+            plt.title(title)
+        plt.savefig(plot_name)
     
-    fig = plt.figure()
-    sns.heatmap(mat, square=True, annot=True, cbar=False)
-    plt.xlabel('predicted value')
-    plt.ylabel('true value')
-    if title:
-        plt.title(title)
-    plt.savefig(plot_name)
+        if show_figure is True:
+            plt.show()
+        else:
+            plt.close(fig)
+    else:
+        sns.heatmap(mat, square=True, annot=True, cbar=False, ax=ax)
+        ax.set_xlabel('predicted value')
+        ax.set_ylabel('true value')
+        if title:
+            ax.set_title(title)
+        pass
     pass
+
 
 def plot_roc_curve_custom(model,
     X_test, y_test,
-    label=None, title=None, plot_name="roc_curve.png"):
+    label=None, title=None, plot_name="roc_curve.png", show_figure=False, ax=None):
     
     y_pred = model.predict_proba(X_test)
     # print('y_test', type(y_test)); print('y_pred', type(y_pred));
@@ -105,20 +124,40 @@ def plot_roc_curve_custom(model,
     fpr, tpr, _ = roc_curve(y_test, y_pred)
     roc_auc = auc(fpr, tpr)
     
-    fig = plt.figure()
-    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
-    plt.plot([0, 1], [0, 1], 'k--')
+    if ax is None:
+        fig = plt.figure()
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
+        plt.plot([0, 1], [0, 1], 'k--')
     
-    plt.xlabel('False positive rate')
-    plt.ylabel('True positive rate')
-    if  title:
-        plt.title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
+        plt.xlabel('False positive rate')
+        plt.ylabel('True positive rate')
+        if  title:
+            plt.title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
+        else:
+            plt.title('ROC curve')
+        plt.legend(loc='best')
+        plt.savefig(plot_name)
+        # plt.show()
+        if show_figure is True:
+            plt.show()
+        else:
+            plt.close(fig)
     else:
-        plt.title('ROC curve')
-    # plt.legend(loc='best')
-    plt.savefig(plot_name)
-    # plt.show()
+        ax.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % (roc_auc,))
+        ax.plot([0, 1], [0, 1], 'k--')
+    
+        ax.set_xlabel('False positive rate')
+        ax.set_ylabel('True positive rate')
+        if  title:
+            ax.set_title('ROC curve: {} | Auc {}'.format(title, f"{roc_auc:.2f}"))
+        else:
+            ax.set_title('ROC curve')
+        ax.legend(loc='best')
+        # plt.savefig(plot_name)
+        # plt.show()
+        pass
     return roc_auc
+
 
 def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
     # Shos some plots if 'show_plot' flag is valued as True
@@ -133,6 +172,7 @@ def show_plots_fit_by_n(clf, kernel, n_components, Xtest, ytest):
         ytest,
         title='n_components={} | kernel={}'.format(10, kernel))
     pass
+
 
 def add_records(data, cv_list, res_kf, res_loo, res_sscv):
     # record = list(map(lambda xi: f"{xi[0]:.2f} (+/-) {xi[1]:.2f}", [xi[1:] for xi in res_kf]))
@@ -158,7 +198,8 @@ def add_records(data, cv_list, res_kf, res_loo, res_sscv):
         pass
     return data
 
-def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest, verbose=0):
+
+def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest=None, verbose=0):
     if verbose == 1:
         print('KernelPCA')
         print('-' * 100)
@@ -176,9 +217,13 @@ def KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest, verbose=0):
         print('KernelPCA - Transform')
         print('-' * 100)   
     Xtrain_transformed = kernel_pca.transform(Xtrain)
+
+    if Xtest is None:
+        return Xtrain_transformed, None
     Xtest_transformed = kernel_pca.transform(Xtest)
 
     return Xtrain_transformed, Xtest_transformed
+
 
 def prepare_output_df(cv_list, pca_kernels_list, data):
     # col_names_acc = list(map(lambda xi: f"ACC(cv={xi})", cv_list))
@@ -201,6 +246,7 @@ def prepare_output_df(cv_list, pca_kernels_list, data):
     df = pd.DataFrame(data=data, columns=col_names,  index=idx_names)
     return df
 
+
 def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
 
     col_names = []
@@ -209,20 +255,37 @@ def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
     df = pd.DataFrame(data=[data], columns=col_names,  index=[estimator_name])
     return df
 
+
 def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
     data, data_auc = [], []
-
+    col_params_names = None
     for _, a_grid_search in enumerate(grid_searchs):
-        tmp_res,tmp_auc = [], []
-        for _, (a_grid, _, auc) in enumerate(a_grid_search):
-            tmp_res.append("%.2f" % (a_grid.best_score_,))
+        tmp_res, tmp_auc = [], []
+        for _, (a_grid, _, auc, acc_test) in enumerate(a_grid_search):
+            
+            best_params_values = list(map(str, a_grid.best_params_.values()))
+            # best_score = "%.2f" % (a_grid.best_score_,)
+            # tmp_res = ([best_score] + best_params_values)
+
+            best_score_tst = "%.2f" % (acc_test,)
+            best_score_train = "%.2f" % (a_grid.best_score_,)
+            
+            tmp_res = ([best_score_train, best_score_tst] + best_params_values)
             tmp_auc.append("%.2f" % (auc,))
+
+            col_params_names = list(a_grid.best_params_.keys())
+            data.append(tmp_res)
             pass
-        data.append(tmp_res)
+        # data.append(tmp_res)
         data_auc.append(tmp_auc)
         pass
-    col_names = [f'{k} Acc' for k in pca_kernels]
-    df = pd.DataFrame(data=data, columns=col_names,  index=estimator_names)
+
+    # col_names = [f'{k} Acc' for k in pca_kernels]
+    col_names = ["Acc Train", "Acc Test"] + col_params_names
+    indeces = []
+    for estimator_name in estimator_names:
+        indeces.extend([f'{estimator_name} {k}' for k in pca_kernels])
+    df = pd.DataFrame(data=data, columns=col_names,  index=indeces)
     
     col_names = [f'{k} AUC' for k in pca_kernels]
     df_auc = pd.DataFrame(data=data_auc, columns=col_names,  index=estimator_names)
@@ -233,20 +296,134 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
 # Utilities Functions Custom Stratified Training and Test Set Creation
 # --------------------------------------------------------------------------- #
 
-def get_indices(class_ith_indeces):
-    divisor = len(class_ith_indeces) // 2
+def get_indices(class_ith_indeces, chunks=2):
+    divisor = len(class_ith_indeces) // chunks
     max_len = max(len(class_ith_indeces) - divisor, divisor)
     p1a = class_ith_indeces[:max_len]
     p2a = class_ith_indeces[max_len:]
     return [p1a, p2a]
 
+
 def get_data(p_train, p_test, X, y):
-    ytrain_ = [y[ii]for ii in p_train]
-    ytest_ = [y[ii]for ii in p_test]
+    ytrain_ = np.array([y[ii] for ii in p_train])
+    ytest_ = np.array([y[ii] for ii in p_test])
     
-    Xtrain_ = [X[ii]for ii in p_train]
-    Xtest_ = [X[ii]for ii in p_test]
+    Xtrain_ = np.array([np.array(X[ii]) for ii in p_train])
+    Xtest_ = np.array([np.array(X[ii]) for ii in p_test])
 
     assert len(ytrain_) == len(Xtrain_), f"Train {len(ytrain_)} != {len(Xtrain_)} Test {len(ytest_)} ?? {len(Xtest_)}" 
     assert len(ytest_) == len(Xtest_),f"Train {len(ytrain_)} ?? {len(Xtrain_)} Test {len(ytest_)} != {len(Xtest_)}" 
     return Xtrain_, Xtest_, ytrain_, ytest_
+
+
+def get_stratified_groups(X, y):
+
+    # Get N-stratified Groups
+    class_0_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == -1, enumerate(y))))
+    class_1_indeces = list(map(lambda val: val[0], filter(lambda val: val[1] == 1, enumerate(y))))
+
+    p_class0 = get_indices(class_0_indeces)
+    p_class1 = get_indices(class_1_indeces)
+    
+    # ytrain_ = [y[ii]for ii in p1a] + [y[ii]for ii in p1b] # ytest_ = [y[ii]for ii in p2a] + [y[ii]for ii in p2b]
+    p_train = p_class0[0] + p_class1[0]
+    p_test = p_class0[1] + p_class1[1]
+
+    Xtrain_, Xtest_, ytrain_, ytest_ = get_data(p_train, p_test, X, y)
+    return Xtrain_, Xtest_, ytrain_, ytest_
+
+
+def create_widget_list_df(df_list):
+    res_list = []
+    for df in df_list:
+        widget = widgets.Output()
+        with widget: display.display(df); pass
+        res_list.append(widget)
+        pass
+    hbox = widgets.HBox(res_list)
+    return hbox
+
+
+def create_widget_list_df_vertical(df_list):
+    res_list = []
+    for df in df_list:
+        widget = widgets.Output()
+        with widget: display.display(df); pass
+        res_list.append(widget)
+        pass
+    vbox = widgets.VBox(res_list)
+    return vbox
+
+
+def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
+    if df2 is None:
+        return df1
+    elif df1 is None:
+        return df2
+    res = list(set(df1.columns).intersection(set(df2.columns)))
+    df_res = pd.concat([df1[res], df2[res]], axis=axis, ignore_index=ignore_index)
+    if df1.index.equals(df2.index) is False:
+        indeces = pd.Index(list(df1.index) + list(df2.index))
+        return df_res.set_index(indeces)
+    return df_res
+
+
+def reshape_dfs_acc(list_df, num_col=4, n_cp_list=[2, 9, 11]):
+
+    assert len(list_df) == len(n_cp_list)
+    updated_list = []
+    for df, ncp in zip(list_df, n_cp_list):
+        indeces = list(df.index)
+        estimators_names = list(set(list(map(lambda xi: xi.split(" ")[0], indeces))))
+        columns_names = list(set(list(map(lambda xi: xi.split(" ")[1], indeces))))
+        data = []
+        for ii in range(0, df.shape[0], num_col):
+            a_record = df.iloc[ii:(ii+num_col), 0].values
+            data.append(a_record)
+            pass
+        columns_names = list(map(lambda xi: f"{xi}(PCs={ncp})", columns_names))
+        df = pd.DataFrame(data=data, columns=columns_names, index=estimators_names)
+        updated_list.append(df)
+    return updated_list
+
+
+def show_df_with_mean_at_bottom(df):
+    # show_df_with_mean_at_bottom(df_strfd) # df_strfd.head(df_strfd.shape[0])
+    def s2f(a_str):
+        if a_str.startswith("("):
+            return float(a_str[5:])
+        return float(a_str)
+    result = df.applymap(s2f).mean(axis=0)
+    def f2s(a_num):
+        return "%.2f" % (a_num, )
+    data = np.array(list(map(f2s, result.values)))
+    df_tmp = pd.DataFrame(data=[data], columns=df.columns, index=["Mean Values"])
+    vbox = create_widget_list_df_vertical([df, df_tmp])
+    display.display(vbox)
+    pass
+
+
+def merge_images_within_dir_(pca_kernels_list, figs_dest):
+    for i, kernel in enumerate(pca_kernels_list):
+        dir_target = os.path.join(figs_dest, kernel)
+        images = [f for f in listdir(dir_target) if isfile(join(dir_target, f))]
+    
+        def starts_with_merged(a_file):
+            return os.path.basename(a_file).startswith("merged") is False
+    
+        images = list(filter(lambda xi: starts_with_merged(xi), images))
+        
+        nrows = len(images) // 2
+        for j, image in enumerate(images):
+            if j % 2 == 0:
+                fig = plt.figure(figsize=(10, 10))
+            ax = fig.add_subplot(1, 2, j % 2 +1)
+            full_path_img = os.path.join(dir_target, image)
+            # print(full_path_img)
+            img = mpimg.imread(full_path_img)
+            plt.imshow(img)
+            pass
+        # full_path_img = os.path.join(dir_target, "merged_learning_curves.png")
+        # plt.savefig(full_path_img)
+        pass
+    pass

@@ -14,12 +14,14 @@ from itertools import islice
 import itertools
 
 # Matplotlib pyplot provides plotting API
+# --------------------------------------------------------------------------- #
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
+# --------------------------------------------------------------------------- #
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from sklearn.decomposition import KernelPCA
@@ -32,31 +34,45 @@ from sklearn.preprocessing import Normalizer     # Normalize data (length of 1)
 from sklearn.preprocessing import Binarizer      # Binarization
 
 # Imports for handling Training
+# --------------------------------------------------------------------------- #
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 
 # After Training Analysis Imports
+# --------------------------------------------------------------------------- #
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 
+# --------------------------------------------------------------------------- #
 # Classifiers Imports
+# --------------------------------------------------------------------------- #
+
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
+
 # SVMs Classifieres
+# --------------------------------------------------------------------------- #
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 
 # Bayesian Classifieres
+# --------------------------------------------------------------------------- #
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.naive_bayes import GaussianNB
 
 # Decision Tree Classifieres
+# --------------------------------------------------------------------------- #
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 
 # Import scikit-learn classes: Hyperparameters Validation utility functions.
+# --------------------------------------------------------------------------- #
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import LeavePOut
 from sklearn.model_selection import LeaveOneOut
@@ -64,7 +80,11 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import validation_curve
 from sklearn.model_selection import learning_curve
 
+from sklearn.preprocessing import StandardScaler
+from sklearn.gaussian_process.kernels import RBF
+
 # Import scikit-learn classes: model's evaluation step utility functions.
+# --------------------------------------------------------------------------- #
 from sklearn.metrics import accuracy_score 
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import plot_roc_curve
@@ -122,6 +142,7 @@ def get_classifier(type_classifier, params_classifier):
     print(clf)
     return clf
 
+
 def evaluate_best_current_model_(X, y, pca, gs_clf, test_size, random_state, type_classifier):
     X_train_tmp, X_test_tmp, y_train_tmp, y_test_tmp = train_test_split(
                 X, y, test_size=50, random_state=random_state)
@@ -140,6 +161,7 @@ def evaluate_best_current_model_(X, y, pca, gs_clf, test_size, random_state, typ
     print(metrics.confusion_matrix(y_test_tmp, tmp_predicted))
     print(f"{np.mean(tmp_predicted == y_test_tmp)}")
     pass
+
 
 def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_state, cv=7, iid=False, n_jobs=-1, sss_flag=False, type_classifier=None):
     '''Performs grid search technique, against a defined classifier or pipeline object and a dictionary of hyper-params.
@@ -246,6 +268,7 @@ def grid_search_approach(technique, n, clf, parameters, X, y, test_size, random_
         else: pass #print(err)
     pass
 
+
 def plot_roc_crossval(X, y):
     n_samples, n_features = X.shape
 
@@ -343,6 +366,7 @@ def sgd_classifier_grid_search(X, y,  num_features=None, parameters_sgd_classifi
         type_classifier=type_classifier)
     pass
 
+
 def svm_linear_classifier_grid_search(X, y, kernel_type=None, num_features=None, parameters_svm=None):
     test_size, random_state = 0.25, 50
 
@@ -395,6 +419,7 @@ def svm_linear_classifier_grid_search(X, y, kernel_type=None, num_features=None,
         type_classifier=type_classifier)
     pass
 
+
 def naive_bayes_classifier_grid_search(X, y, num_features=None, parmas_naive_bayes=None):
     
     type_classifier = 'naive-bayes'
@@ -419,6 +444,7 @@ def naive_bayes_classifier_grid_search(X, y, num_features=None, parmas_naive_bay
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)
     pass
+
 
 def decision_tree_classifier_grid_search(X, y, num_features=None, parmas_decision_tree=None):
     
@@ -448,6 +474,7 @@ def decision_tree_classifier_grid_search(X, y, num_features=None, parmas_decisio
         test_size, random_state, sss_flag=False, \
         type_classifier=type_classifier)
     pass
+
 
 def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_forest=None):
     
@@ -482,13 +509,22 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 # --------------------------------------------------------------------------- #
 # Training Custom
 # --------------------------------------------------------------------------- #
-def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_components=2, show_plots=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
+def fit_all_by_n_components(
+    estimators_list, estimators_names,
+    X, y,
+    n_components=2,
+    pca_kernels_list=None, cv_list=None,
+    show_plots=False, plot_dest="figures",
+    verbose=0):
+
+    assert type(X) is np.ndarray, f"Error: Feature Matrix X's type is not np.ndarray but instead is an instance of type: {type(X)}"
+    assert type(y) is np.ndarray, f"Error: target array y's type is not np.ndarray but instead is an instance of type: {type(y)}"
+
     dfs_list, df = [], None
 
     if type(estimators_list) is not list:
         estimators_list = [estimators_list]
-    if type(param_grids) is not list:
-        param_grids = [param_grids]
+    # if type(param_grids) is not list: param_grids = [param_grids]
     if type(estimators_names) is not list:
         estimators_names = [estimators_names]
 
@@ -502,8 +538,8 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
     for _, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         res_df1, res_df2 = fit_by_n_components(
             estimator=estimator_obj, \
-            X=X, \
-            y=y, \
+            X=copy.deepcopy(X), \
+            y=copy.deepcopy(y), \
             n_components=n_components, \
             clf_type=f"{estimator_name}", \
             verbose=verbose,
@@ -518,10 +554,21 @@ def fit_all_by_n_components(estimators_list, estimators_names, X, y, n_component
             df = pd.concat([df,res_df2])
     return dfs_list, df
 
-def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0, show_plots=False, show_errors=False, pca_kernels_list=None, cv_list=None, verbose=0, plot_dest="figures"):
+
+def fit_by_n_components(
+    estimator,
+    X, y,
+    n_components, clf_type,
+    random_state=0, plot_dest="figures",
+    pca_kernels_list=None, cv_list=None,
+    show_plots=False, show_errors=False,
+    verbose=0):
     
-    data = []
-    data_fit_strf = []
+
+    assert type(X) is np.ndarray, f"Error: Feature Matrix X's type is not np.ndarray but instead is an instance of type: {type(X)}"
+    assert type(y) is np.ndarray, f"Error: target array y's type is not np.ndarray but instead is an instance of type: {type(y)}"
+
+    data, data_fit_strf = [], []
     
     # print(pca_kernels_list)
     
@@ -530,9 +577,8 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
         random_state=random_state)
 
     kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
-    errors_list = []
+    errors_list, plot_dest_list = [], []
 
-    plot_dest_list = []
     for ii, kernel in enumerate(kernels_list):
         plot_dest_list.append(os.path.join(plot_dest, kernel))
         try: os.makedirs(plot_dest_list[ii])
@@ -557,7 +603,7 @@ def fit_by_n_components(estimator, X, y, n_components, clf_type, random_state=0,
                 print('=' * 100)
 
             # Prepare data
-            Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
+            Xtrain_transformed, _ = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest) # Xtest_transformed
 
             # Perform CV, LOOCV, Stratified CV
             # Once gotten all results exploit them to fill data object list
@@ -650,8 +696,11 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
             pprint(errors_list)
         pass
 
-def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False):
+
+def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False, avoid_func=False):
     # debug_var = False
+    if avoid_func is True:
+        return None
     plot_dest_list = []
     grid_res_list = []
 
@@ -663,7 +712,7 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
         estimators_names = [estimators_names]
 
     if pca_kernels_list is None:
-        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+        pca_kernels_list = ['linear', 'poly', 'rbf', 'cosine', 'sigmoid']
 
     for ii, estimator_name in enumerate(estimators_names[:]):
         plot_dest_list.append(os.path.join(plot_dest, estimator_name))
@@ -673,8 +722,8 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
     for ii, (estimator_obj, estimator_name) in enumerate(zip(estimators_list, estimators_names)):
         # pprint(estimator_obj.get_params().keys())
         if verbose == 1 and debug_var is True:
-            print()
-            print('=' * 100)
+            # print()
+            # print('=' * 100)
             print(estimator_name)
             print('=' * 100)
             pass
@@ -684,11 +733,15 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
     df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names)
     return df_grid_searches
 
-def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None):
+
+def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None, ignore_func=False):
     # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
 
     if kernels_list is None:
-        kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
+        kernels_list = ['linear', 'poly', 'rbf', 'cosine', 'sigmoid']
+    if ignore_func is True:
+        grid_list = [None] * len(kernels_list)
+        return grid_list
     errors_list = []
     grid_list = []
 
@@ -703,8 +756,8 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
         step_msg = 'Kernel PCA: {} | {}'.format(kernel.capitalize(), clf_type)
         try:
             if verbose == 1:
-                print()
-                print('=' * 100)
+                # print()
+                # print('=' * 100)
                 print(step_msg)
                 print('=' * 100)
           
@@ -717,18 +770,19 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
             # Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components, kernel, Xtrain, Xtest)
 
             # perform_gs_cv_techniques(estimator, param_grid, Xtrain_transformed, ytrain, Xtest_transformed, ytest, title)
-            res_grid, auc = grid_search_stratified_cross_validation(
+            res_grid, auc, acc_test, _ = grid_search_stratified_cross_validation( # res_grid, auc, df_list_class_reports
                 estimator, param_grid,
                 X, y,
                 n_components=n_components, kernel=kernel, n_splits=2,
-                title=title, show_figures=True,
+                title=title, show_figures=show_plots,
                 plot_dest=plot_dest_list[ii],
                 verbose=verbose)
-            grid_list.append((res_grid, kernel, auc))
+            grid_list.append((res_grid, kernel, auc, acc_test))
 
             # if show_plots: pass
         except Exception as err:
             err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
+            raise err
             print(err_msg)
             errors_list.append(err_msg)
             pass

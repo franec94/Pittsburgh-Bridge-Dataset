@@ -73,28 +73,27 @@ from sklearn.metrics import roc_curve
 
 from utils.utilities_functions import *
 
-def perform_cv_techniques(data, estimator, Xtrain, Xtrain_transformed, ytrain, cv_list, verbose=0):
+def perform_cv_techniques(data, estimator, Xtrain, Xtrain_transformed, ytrain, cv_list, verbose=0, scoring='accuracy'):
     # Perform standard CV
     clf_cloned = sklearn.base.clone(estimator)
-    res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose, cv_list=cv_list)
+    res_kf = kfold_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose, cv_list=cv_list, scoring=scoring)
 
     # Perform LOOCV
     clf_cloned = sklearn.base.clone(estimator)
-    res_loo = loo_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose)
+    res_loo = loo_cross_validation(clf_cloned, Xtrain_transformed, ytrain, verbose=verbose, scoring=scoring)
             
     # Perform Stratified Cross Validation
     clf_cloned = sklearn.base.clone(estimator)
-    res_sscv = stratified_cross_validation(clf_cloned, Xtrain, ytrain, n_splits=3, verbose=verbose)
+    res_sscv = stratified_cross_validation(clf_cloned, Xtrain, ytrain, n_splits=3, verbose=verbose, scoring=scoring)
 
     data = add_records(data, cv_list, res_kf, res_loo, res_sscv)
 
     return data
 
-
 # --------------------------------------------------------------------------- #
 # Cross Validation Custom
 # --------------------------------------------------------------------------- #
-def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0, cv_list=[3,4,5,10]):
+def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0, cv_list=[3,4,5,10], scoring=None):
     # K-Fold Cross-Validation
     if verbose == 1:
         print()
@@ -105,27 +104,29 @@ def kfold_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=
     res = []
     for cv in cv_list:
         clf_cloned = sklearn.base.clone(clf)
-        scores = cross_val_score(clf_cloned, Xtrain, ytrain, cv=cv)
+        scores = cross_val_score(clf_cloned, Xtrain, ytrain, cv=cv, scoring=scoring)
         if verbose == 1:
             # print("CV=%d | Accuracy: %0.2f (+/- %0.2f)" % (cv, scores.mean(), scores.std() * 2))
             print("CV=%d | Accuracy: %0.2f (+/- %0.2f)" % (cv, scores.mean(), scores.std()))
         res.append([cv, scores.mean(), scores.std() * 2, scores])
     return res
 
-def loo_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
+
+def loo_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0, scoring=None):
     # Leave-One-Out Cross-Validation
     if verbose == 1:
         print()
         print('-' * 100)
         print('Leave-One-Out Cross-Validation')
         print('-' * 100)
-    scores = cross_val_score(clf, Xtrain, ytrain, cv=LeaveOneOut())
+    scores = cross_val_score(clf, Xtrain, ytrain, cv=LeaveOneOut(), scoring=scoring)
     if verbose == 1:
         # print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
         print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std()))
     return (scores.mean(), scores.std() * 2, scores)
 
-def stratified_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, n_splits=3, verbose=0):
+
+def stratified_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, n_splits=3, verbose=0, scoring=None):
     # Stratified-K-Fold Cross-Validation
     if verbose == 1:
         print()
@@ -133,13 +134,14 @@ def stratified_cross_validation(clf, Xtrain, ytrain, Xtest=None, ytest=None, n_s
         print('Stratified-K-Fold Cross-Validation')
         print('-' * 100)
     skf = StratifiedKFold(n_splits=n_splits)
-    scores = cross_val_score(clf, Xtrain, ytrain, cv=skf)
+    scores = cross_val_score(clf, Xtrain, ytrain, cv=skf, scoring=scoring)
     if verbose == 1:
         # print("Accuracy: %0.2f (+/- %0.2f) | Accuracy Test:" % (scores.mean(), scores.std() * 2))
         print("Accuracy: %0.2f (+/- %0.2f) | Accuracy Test:" % (scores.mean(), scores.std()))
     return (scores.mean(), scores.std() * 2, scores)
 
-def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
+
+def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0, scoring=None):
     if verbose == 1:
         print()
         print('-' * 100)
@@ -150,9 +152,10 @@ def fit(clf, Xtrain, ytrain, Xtest=None, ytest=None, verbose=0):
     if verbose == 1:
         print('accuracy score:', accuracy_score(ytest, y_model))
         print(f"accuracy score (percentage): {accuracy_score(ytest, y_model)*100:.2f}%")
-    return clf
+    return f"{accuracy_score(ytest, y_model)*100:.2f}%"
 
-def fit_strfd(data_fit_strf, kernel, n_components, clf, X, y, n_splits=2, verbose=0, show_plot=False):
+
+def fit_strfd(data_fit_strf, kernel, n_components, clf, X, y, n_splits=2, verbose=0, show_plot=False, scoring=None):
     if verbose == 1:
         print()
         print('-' * 100)
