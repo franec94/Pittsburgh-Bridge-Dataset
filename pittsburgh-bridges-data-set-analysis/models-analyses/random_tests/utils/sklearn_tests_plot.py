@@ -434,12 +434,12 @@ def compute_likelihood_on_test_data(base_X_train, base_X_test, n_features):
     return X_train, X_test, shrinkages, negative_logliks, loglik_real
 
 
-def compare_diff_approaches_fine_tune(X_train, X_test, shrinkages):
+def compare_diff_approaches_fine_tune(X_train, X_test, shrinkages, cv_technique=None):
     # Compare different approaches to setting the parameter
 
     # GridSearch for an optimal shrinkage coefficient
     tuned_parameters = [{'shrinkage': shrinkages}]
-    cv = GridSearchCV(ShrunkCovariance(), tuned_parameters)
+    cv = GridSearchCV(ShrunkCovariance(), tuned_parameters, cv=cv_technique)
     cv.fit(X_train)
 
     # Ledoit-Wolf optimal shrinkage coefficient estimate
@@ -453,10 +453,10 @@ def compare_diff_approaches_fine_tune(X_train, X_test, shrinkages):
     return loglik_lw, loglik_oa, oa, lw, cv
 
 
-def test_shrinkage_covariance_estimation(base_X_train, base_X_test, n_features, ax=None):
+def test_shrinkage_covariance_estimation(base_X_train, base_X_test, n_features, cv_technique=None, ax=None):
     X_train, X_test, shrinkages, negative_logliks, loglik_real  = compute_likelihood_on_test_data(base_X_train, base_X_test, n_features)
 
-    loglik_lw, loglik_oa, oa, lw, cv = compare_diff_approaches_fine_tune(X_train, X_test, shrinkages)
+    loglik_lw, loglik_oa, oa, lw, cv = compare_diff_approaches_fine_tune(X_train, X_test, shrinkages, cv_technique=cv_technique)
 
     show_shrinkage_covariance_estimation_results(X_test, cv, lw, shrinkages, negative_logliks, loglik_real, loglik_lw, loglik_oa, oa, ax=ax)
     pass
@@ -505,7 +505,7 @@ def test_shrinkage_covariance_estimation_by_kernel_Pca(
 
         # estimator_name = str(estimator).split('(')[0]
 
-        test_shrinkage_covariance_estimation(base_X_train=Xtrain_transformed, base_X_test=Xtest_transformed, n_features=n_components, ax=axes[ii])
+        test_shrinkage_covariance_estimation(base_X_train=Xtrain_transformed, base_X_test=Xtest_transformed, n_features=n_components, cv_technique=None, ax=axes[ii])
         """
         test_significance_of_classification_score(
             Xtrain_transformed, y, n_classes,
