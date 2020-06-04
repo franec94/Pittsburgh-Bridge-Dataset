@@ -460,7 +460,7 @@ def test_shrinkage_covariance_estimation(avoid_func=False):
     if avoid_func is True: return
 
     base_X_train, base_X_test, n_features, _ = generate_sample_data() # n_samples
-    X_train, X_test, shrinkages, negative_logliks, loglik_real, cv  = compute_likelihood_on_test_data(base_X_train, base_X_test, n_features)
+    X_train, X_test, shrinkages, negative_logliks, loglik_real  = compute_likelihood_on_test_data(base_X_train, base_X_test, n_features)
 
     loglik_lw, loglik_oa, oa, lw, cv = compare_diff_approaches_fine_tune(X_train, X_test, shrinkages)
 
