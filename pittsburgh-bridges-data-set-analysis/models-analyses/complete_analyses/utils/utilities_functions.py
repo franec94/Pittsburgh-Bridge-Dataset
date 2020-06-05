@@ -256,7 +256,10 @@ def prepare_output_df_baseline_fit(pca_kernels_list, data, estimator_name):
     return df
 
 
-def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names):
+def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names, flag_no_computation=False):
+
+    if flag_no_computation is True:
+        return None, None
     data, data_auc = [], []
     col_params_names = None
     for _, a_grid_search in enumerate(grid_searchs):

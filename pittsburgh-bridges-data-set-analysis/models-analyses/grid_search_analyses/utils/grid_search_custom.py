@@ -259,11 +259,12 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
         auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
 
+        clf = sklearn.clone(grid.best_estimator_)
         test_significance_of_classification_score(
-                Xtest_transformed_, ytest_,
-                # Xtrain_transformed_, ytrain_,
+                # Xtest_transformed_, ytest_,
+                Xtrain_transformed_, ytrain_,
                 n_classes=2,
-                estimator=grid.best_estimator_,
+                estimator=clf,
                 cv=StratifiedKFold(2),
                 ax=fig.add_subplot(1, 3, 3),
                 verbose=1,
@@ -291,11 +292,12 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
         roc_curve_plot_name = os.path.join(plot_dest, "roc_curve.png")
         auc = plot_roc_curve_custom(grid.best_estimator_, Xtest_transformed_, ytest_, title=title, plot_name=roc_curve_plot_name, show_figure=show_figures, ax=fig.add_subplot(1, 3, 2))
 
+        clf = sklearn.clone(grid.best_estimator_)
         test_significance_of_classification_score(
-            Xtest_transformed_, ytest_,
-            # Xtrain_transformed_, ytrain_,
+            # Xtest_transformed_, ytest_,
+            Xtrain_transformed_, ytrain_,
             n_classes=2,
-            estimator=grid.best_estimator_,
+            estimator=clf,
             cv=StratifiedKFold(2),
             ax=fig.add_subplot(1, 3, 3),
             verbose=1,

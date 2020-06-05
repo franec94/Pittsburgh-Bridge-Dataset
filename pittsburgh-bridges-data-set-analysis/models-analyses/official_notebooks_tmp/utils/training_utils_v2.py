@@ -697,7 +697,7 @@ def grid_search_estimator(estimator, param_grid, X, y, n_components, clf_type, r
         pass
 
 
-def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False, avoid_func=False):
+def grid_search_all_by_n_components(estimators_list, param_grids, estimators_names, X, y, n_components, pca_kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", debug_var=False, avoid_func=False, flag_no_computation=False):
     # debug_var = False
     if avoid_func is True:
         return None
@@ -728,13 +728,13 @@ def grid_search_all_by_n_components(estimators_list, param_grids, estimators_nam
             print('=' * 100)
             pass
         if debug_var is False:
-            grid_res = grid_search_by_n_components(estimator_obj, param_grids[ii], X, y, n_components, estimator_name, kernels_list=pca_kernels_list, random_state=0, show_plots=False, show_errors=False, verbose=verbose, plot_dest=plot_dest_list[ii], estimator_name=estimator_name)
+            grid_res = grid_search_by_n_components(estimator_obj, param_grids[ii], X, y, n_components, estimator_name, kernels_list=pca_kernels_list, random_state=0, show_plots=False, show_errors=False, verbose=verbose, plot_dest=plot_dest_list[ii], estimator_name=estimator_name, flag_no_computation=flag_no_computation)
             grid_res_list.append(grid_res)
-    df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names)
+    df_grid_searches = prepare_output_df_grid_search(grid_res_list, pca_kernels_list, estimators_names, flag_no_computation=flag_no_computation)
     return df_grid_searches
 
 
-def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None, ignore_func=False):
+def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_type, kernels_list=None, random_state=0, show_plots=False, show_errors=False, verbose=0, plot_dest="figures", estimator_name=None, ignore_func=False, flag_no_computation=False):
     # Xtrain, Xtest, ytrain, ytest = train_test_split(X, y, random_state=random_state)
 
     if kernels_list is None:
@@ -776,7 +776,7 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
                 n_components=n_components, kernel=kernel, n_splits=2,
                 title=title, show_figures=show_plots,
                 plot_dest=plot_dest_list[ii],
-                verbose=verbose)
+                verbose=verbose, flag_no_computation=flag_no_computation)
             grid_list.append((res_grid, kernel, auc, acc_test))
 
             # if show_plots: pass
