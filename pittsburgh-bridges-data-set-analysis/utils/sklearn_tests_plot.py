@@ -921,7 +921,9 @@ def get_classifiers(estimators=None, n_samples=1):
     elif type(estimators) is not list:
         estimator_name = str(estimators).split('(')[0]
         return [[estimator_name, estimators]]
-    return estimators
+    
+    estimators_names = list(map(lambda estimator: str(estimator).split('(')[0], estimators))
+    return list(zip(estimators_names, estimators))
 
 
 def fit_classifiers_comparing_various_online_solvers(classifiers, X, y, rounds, heldout):
