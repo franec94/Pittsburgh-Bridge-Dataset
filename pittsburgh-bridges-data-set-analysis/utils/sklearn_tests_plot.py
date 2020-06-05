@@ -6,6 +6,7 @@ import numpy as np    # Load the Numpy library with alias 'np'
 import pandas as pd   # Load the Pandas library with alias 'pd' 
 
 import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns' 
+sns.set()
 
 import copy
 from scipy import stats
@@ -527,6 +528,28 @@ def test_shrinkage_covariance_estimation_by_kernel_Pca(
 # Plot the decision boundaries of a VotingClassifier
 # =========================================================================================================================
 
+def show_scatter_by_class_label(X, y, label_val, color, marker, ax=None):
+    indeces = list(map(lambda yy: yy[0], filter(lambda yy: yy[1] == label_val, enumerate(y))))
+    X_tmp_0 = [X[ii, 0] for ii in indeces]
+    X_tmp_1 = [X[ii, 1] for ii in indeces]
+    y_tmp = list(map(lambda yy: color, filter(lambda yy: yy[1] == label_val, enumerate(y))))
+
+    assert len(X_tmp_0) == len(X_tmp_1), f"len(X_tmp_0) != len(X_tmp_1): {len(X_tmp_0)} != {len(X_tmp_1)}"
+    assert len(X_tmp_0) == len(y_tmp) ,f"len(X_tmp_0) != len(y_tmp): {len(X_tmp_0)} != {len(y_tmp)}"
+    if ax is None:
+        plt.scatter(X_tmp_0, X_tmp_1, c=y_tmp,
+            # label=color,
+            s=20, edgecolor='k')
+        pass
+    else:
+        label = f"Deck {color}" if label_val == -1 else f"Through {color}"
+        ax.scatter(X_tmp_0, X_tmp_1, c=y_tmp,
+            label=label,
+            marker=marker,
+            s=20, edgecolor='k')
+        pass
+    pass
+
 def show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimators, eclf, gridshape=None, figsize=(10,8)):
     # Plotting decision regions
     x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
@@ -540,32 +563,63 @@ def show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimat
     else:
         nrows = n // 2  if n % 2 == 0 else n // 2 + 1
         ncols = 2
-    f, axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=figsize)
+    
+    print(nrows, ncols)
+    _, axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=figsize)
 
     estimators_ = copy.deepcopy(estimators)
     estimators_.append(eclf)
     estimators_names = list(map(lambda estimator: str(estimator).split('(')[0], estimators_))
 
-    n_ = n // 2  if n % 2 == 0 else n // 2 + 1
-    array = list(range(n_))
+
+    array = list(range(nrows))
     tmp_product = product(array, [0, 1])
 
+    # pprint(estimators_names)
+    # pprint(list(tmp_product))
+
     # for idx, clf, tt in zip(product([0, 1], [0, 1]),
-    for idx, clf, tt in zip(tmp_product,
+
+    class_labels = np.unique(y)
+    colors = ['tab:blue', 'tab:orange', 'tab:green']
+    markers = ['^', 'o']
+    for ii, (idx, clf, tt) in enumerate(
+                        zip(product(array, [0, 1]),
                         # [clf1, clf2, clf3, eclf],
                         estimators_,
                         # ['Decision Tree (depth=4)', 'KNN (k=7)', 'Kernel SVM', 'Soft Voting']
                         estimators_names
-                        ):
-
+                        )):
+        # print(idx)
         Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
         Z = Z.reshape(xx.shape)
 
-        axarr[idx[0], idx[1]].contourf(xx, yy, Z, alpha=0.4)
-        axarr[idx[0], idx[1]].scatter(X[:, 0], X[:, 1], c=y,
-                                  s=20, edgecolor='k')
-        axarr[idx[0], idx[1]].set_title(tt)
-        axarr[idx[0], idx[1]].legend()
+        if nrows > 1:
+            # colors = list(map(lambda yy: 'Deck' if yy == -1 else 'Through', y))
+            axarr[idx[0], idx[1]].contourf(xx, yy, Z, alpha=0.4)
+        
+            for jj, class_label in enumerate(class_labels):
+                marker = markers[jj]
+                color = colors[jj]
+                show_scatter_by_class_label(X, y, label_val=class_label, ax=axarr[idx[0], idx[1]], color=color, marker=marker)
+            # axarr[idx[0], idx[1]].scatter(X[:, 0], X[:, 1], c=y,
+            # label=color,
+            # s=20, edgecolor='k')
+            axarr[idx[0], idx[1]].set_title(tt)
+            axarr[idx[0], idx[1]].legend()
+        else:
+            # colors = list(map(lambda yy: 'Deck' if yy == -1 else 'Through', y))
+            axarr[ii].contourf(xx, yy, Z, alpha=0.4)
+        
+            for jj, class_label in enumerate(class_labels):
+                marker = markers[jj]
+                color = colors[jj]
+                show_scatter_by_class_label(X, y, label_val=class_label, ax=axarr[ii], color=color, marker=marker)
+            # axarr[idx[0], idx[1]].scatter(X[:, 0], X[:, 1], c=y,
+            # label=color,
+            # s=20, edgecolor='k')
+            axarr[ii].set_title(tt)
+            axarr[ii].legend()
 
     plt.show()
     pass
@@ -619,6 +673,64 @@ def try_decision_boundaries_voting_classifier_via_plot(avoid_func=False):
     pass
 
 
+def show_histogram_first_sample(X, y, estimators):
+
+    # predict class probabilities for all classifiers
+    probas = [c.predict_proba(X) for c in estimators]
+
+    # get class probabilities for the first sample in the dataset
+    class1_1 = [pr[0, 0] for pr in probas]
+    class2_1 = [pr[0, 1] for pr in probas]
+
+    # plotting
+
+    N = len(estimators)  # number of groups
+    ind = np.arange(N)  # group positions
+    width = 0.35  # bar width
+
+    fig, ax = plt.subplots()
+
+    # bars for classifier 1-3
+    p1 = ax.bar(ind, np.hstack(([class1_1[:-1], [0]])), width,
+            color='green', edgecolor='k')
+    p2 = ax.bar(ind + width, np.hstack(([class2_1[:-1], [0]])), width,
+            color='lightgreen', edgecolor='k')
+
+    # bars for VotingClassifier
+    tmp_list = [0] * len(class1_1[:-1]) +  [class1_1[-1]]
+    p3 = ax.bar(ind, tmp_list, width,
+            color='blue', edgecolor='k')
+    
+    tmp_list = [0] * len(class2_1[:-1]) +  [class2_1[-1]]
+    p4 = ax.bar(ind + width, tmp_list, width,
+            color='steelblue', edgecolor='k')
+
+    # plot annotations
+
+    """
+    ['LogisticRegression\nweight 1',
+                    'GaussianNB\nweight 1',
+                    'RandomForestClassifier\nweight 5',
+                    'VotingClassifier\n(average probabilities)']
+    """
+    clfs_names = list(map(lambda xi: str(xi).split('(')[0], estimators))
+    plt.axvline(N - 2 + .8, color='k', linestyle='dashed')
+    ax.set_xticks(ind + width)
+    ax.set_xticklabels(clfs_names,
+                   rotation=40,
+                   ha='right')
+    plt.ylim([0, 1])
+    if y is not None:
+        true_label = 'Deck Bridge' if y[0] == -1 else 'Through Brdige'
+        plt.title(f'Class probabilities for sample 1(true label = {true_label}) by different classifiers')
+    else:
+        plt.title(f'Class probabilities for sample 1 by different classifiers')
+    # plt.legend([p1[0], p2[0]], ['class 1', 'class 2'], loc='upper left')
+    plt.legend([p1[0], p2[0]], ['class: Deck Brdige', 'class: Through Brdige'], loc='upper left')
+    plt.tight_layout()
+    plt.show()
+    pass
+
 # -----------------------------------------------------------------
 # Plot the decision boundaries of a VotingClassifier
 # -----------------------------------------------------------------
@@ -644,7 +756,7 @@ def fit_classifiers(X, y, voting_clf_params, estimators=None):
         voting = voting_clf_params['voting'][0]
     else:
         voting = voting_clf_params['voting']
-    weights = voting_clf_params['weights']
+    weights = voting_clf_params['weights'][:len(estimators_)]
 
     """
     eclf = VotingClassifier(estimators=[('dt', clf1), ('knn', clf2),
@@ -667,6 +779,7 @@ def fit_classifiers(X, y, voting_clf_params, estimators=None):
 
     # return clf1, clf2, clf3, eclf
     return estimators_, eclf
+
 
 def get_voting_clf_params(voting_clf_params, estimators):
 
@@ -693,7 +806,7 @@ def show_decision_boundaries_voting_classifier_by_kernel(
     stratified_folds=False,
     test_size=0.33, random_state=42, shuffle=True,
     title="decision boundaries voting classifier ", fig_name="decision_boundaries_voting_classifier.png"
-):
+    ):
 
     n_components = 2
     kernels_list = get_kernels(kernel)
@@ -713,6 +826,52 @@ def show_decision_boundaries_voting_classifier_by_kernel(
 
 
         # show_decision_boundaries_voting_classifier_via_plot(X, y, clf1, clf2, clf3, eclf)
-        show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimators, eclf, gridshape=None, figsize=(10,8))
+        show_decision_boundaries_voting_classifier_via_plot_estimators(Xtrain_transformed, ytrain_, estimators, eclf, gridshape=None, figsize=(10,8))
+
+        n_components = 2
+        show_voting_classifier_vs_all_bars(
+            X, y, kernel=kernel_name,
+            voting_clf_params=voting_clf_params,
+            n_classes=-1, n_components=n_components,
+            estimators=estimators, cv=StratifiedKFold(2),
+            verbose=0,
+            show_fig=True, save_fig=False,
+            stratified_folds=False,
+            test_size=0.33, random_state=42, shuffle=True,
+            title="voting classifier vs all bars", fig_name="voting_classifier_vs_all_bars.png"
+        )
         pass
+    pass
+
+
+def show_voting_classifier_vs_all_bars(
+    X, y, kernel,
+    voting_clf_params,
+    n_classes=-1, n_components=2,
+    estimators=SVC(kernel='linear'), cv=StratifiedKFold(2),
+    verbose=0,
+    show_fig=True, save_fig=False,
+    stratified_folds=False,
+    test_size=0.33, random_state=42, shuffle=True,
+    title="voting classifier vs all bars", fig_name="voting_classifier_vs_all_bars.png"
+    ):
+
+    kernels_list = get_kernels(kernel)
+    voting_clf_params_ = get_voting_clf_params(voting_clf_params, estimators)
+
+    for ii, kernel_name in enumerate(kernels_list):
+
+        if stratified_folds is True:
+            Xtrain_, Xtest_, ytrain_, ytest_ = get_stratified_groups(X, y)
+        else:
+            Xtrain_, Xtest_, ytrain_, ytest_ = train_test_split(X, y, test_size=test_size, random_state=random_state, shuffle=shuffle)
+        
+        Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components=n_components, kernel=kernel_name, Xtrain=Xtrain_, Xtest=Xtest_)
+
+        estimators, eclf = fit_classifiers(Xtrain_transformed, ytrain_, voting_clf_params_, estimators=estimators)
+
+        estimators_ = copy.deepcopy(estimators)
+        estimators_.append(eclf)
+        show_histogram_first_sample(Xtrain_transformed, ytrain_, estimators_)
+        pass  
     pass
