@@ -1041,6 +1041,8 @@ def try_comparing_various_online_solvers_by_kernel(
     title="try comparing various online solvers by kernel", fig_name="try_comparing_various_online_solvers_by_kernel.png"
     ):
 
+    assert n_components <= X.shape[1], f"n_components >= X.shape[1]: {n_components} > {X.shape[1]}"
+
     kernels_list = get_kernels(kernels)
 
     classifiers = get_classifiers(estimators=estimators, n_samples=X.shape[0])
@@ -1049,6 +1051,7 @@ def try_comparing_various_online_solvers_by_kernel(
 
     if gridshape is not None:
         axes = list()
+        assert figsize is not None, "figsize is None"
         fig = plt.figure(figsize=figsize)
         n = len(kernels_list)
         nrows_tmp = n // 2 if n % 2 == 0 else n // 2 + 1
@@ -1069,7 +1072,7 @@ def try_comparing_various_online_solvers_by_kernel(
         else:
             yy_list = fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y, rounds, heldout, kernel_name=kernel_name, n_components=n_components)
         
-        title = f"{kernel_name}|PCs#={n_components}"
+        title = f"{kernel_name.capitalize()}|PCs#={n_components}"
 
         if gridshape is None:
             show_comparing_various_online_solvers(xx, yy_list, title=title)

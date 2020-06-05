@@ -1069,7 +1069,7 @@ def try_comparing_various_online_solvers_by_kernel(
         else:
             yy_list = fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y, rounds, heldout, kernel_name=kernel_name, n_components=n_components)
         
-        title = f"{kernel_name}|PCs#={n_components}"
+        title = f"{kernel_name.capitalize()}|PCs#={n_components}"
 
         if gridshape is None:
             show_comparing_various_online_solvers(xx, yy_list, title=title)
