@@ -9,84 +9,54 @@ import seaborn as sns # Load the Seabonrn, graphics library with alias 'sns'
 sns.set()
 
 import copy
-from scipy import stats
-from scipy import interp
-from scipy import linalg
+from scipy import stats, interp, linalg
 from itertools import product
 from os import listdir; from os.path import isfile, join
-from itertools import islice
-from IPython import display
+from itertools import islice; from IPython import display
 import ipywidgets as widgets
-import itertools
-import os; import sys
+import os; import sys; import itertools
 
 # Matplotlib pyplot provides plotting API
-import matplotlib as mpl
-from matplotlib import pyplot as plt
-import chart_studio.plotly.plotly as py
-import matplotlib.image as mpimg
+import matplotlib as mpl; from matplotlib import pyplot as plt; import chart_studio.plotly.plotly as py; import matplotlib.image as mpimg
 
 from sklearn import datasets
 
 # Preprocessing Imports
 # from sklearn.preprocessing import StandardScaler
 from sklearn import preprocessing
-from sklearn.decomposition import PCA
-from sklearn.decomposition import KernelPCA
-from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA,KernelPCA
 
-from sklearn.preprocessing import MinMaxScaler
-
-from sklearn.preprocessing import StandardScaler # Standardize data (0 mean, 1 stdev)
-from sklearn.preprocessing import Normalizer     # Normalize data (length of 1)
-from sklearn.preprocessing import Binarizer      # Binarization
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, Normalizer, Binarizer
 
 # Imports for handling Training
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import permutation_test_score
+from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit, GridSearchCV, permutation_test_score
 
 # After Training Analysis Imports
 from sklearn import metrics
 from sklearn.metrics import roc_curve, auc
 
+from sklearn.linear_model import SGDClassifier, Perceptron, PassiveAggressiveClassifier, LogisticRegression
+
 # Classifiers Imports
-# SVMs Classifieres
 from sklearn.svm import LinearSVC, SVC
-from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 
 from sklearn.neighbors import KNeighborsClassifier
 
 # Bayesian Classifieres
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import GaussianNB, MultinomialNB
 
 # Decision Tree Classifieres
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, VotingClassifier
 
 # Import scikit-learn classes: Hyperparameters Validation utility functions.
-from sklearn.model_selection import cross_val_score
-from sklearn.model_selection import LeavePOut
-from sklearn.model_selection import LeaveOneOut
-from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import validation_curve
-from sklearn.model_selection import learning_curve
+from sklearn.model_selection import cross_val_score, LeavePOut, LeaveOneOut, StratifiedKFold, validation_curve, learning_curve, train_test_split
 
 # Import scikit-learn classes: model's evaluation step utility functions.
-from sklearn.metrics import accuracy_score 
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import plot_roc_curve
-from sklearn.metrics import roc_curve
-from sklearn.metrics import classification_report
-
-from sklearn.covariance import LedoitWolf, OAS, ShrunkCovariance, \
-    log_likelihood, empirical_covariance
+from sklearn.metrics import accuracy_score , confusion_matrix, plot_roc_curve, roc_curve, classification_report
+from sklearn.covariance import LedoitWolf, OAS, ShrunkCovariance, log_likelihood, empirical_covariance
 
 from utils.utilities_functions import *
 
@@ -735,7 +705,6 @@ def show_histogram_first_sample(X, y, estimators):
 # Plot the decision boundaries of a VotingClassifier
 # -----------------------------------------------------------------
 
-
 def fit_classifiers(X, y, voting_clf_params, estimators=None):
 
     # pprint(voting_clf_params)
@@ -876,6 +845,7 @@ def show_voting_classifier_vs_all_bars(
         pass  
     pass
 
+
 def fit_show_voting_classifier_vs_all_bars(estimators, data, voting='soft', weights=None):
 
     if len(estimators) == 0: return
@@ -892,4 +862,223 @@ def fit_show_voting_classifier_vs_all_bars(estimators, data, voting='soft', weig
     estimators_ = copy.deepcopy(estimators)
     estimators_.append(eclf)
     show_histogram_first_sample(Xtrain, ytrain, estimators_)
+    pass
+
+# =========================================================================================================================
+# Comparing various online solvers
+# =========================================================================================================================
+
+def show_comparing_various_online_solvers_via_plot(xx, yy_list, title=None):
+    if len(yy_list) == 0: return
+
+    for _, (yy, name) in enumerate(yy_list):
+        plt.plot(xx, yy, label=name)
+        pass
+    if title is not None:
+        plt.title(title)
+    plt.legend(loc="upper right")
+    plt.xlabel("Proportion train")
+    plt.ylabel("Test Error Rate")
+    plt.show()
+    pass
+
+
+def show_comparing_various_online_solvers_via_ax(xx, yy_list, ax, title=None):
+    if len(yy_list) == 0: return
+
+    for _, (yy, name) in enumerate(yy_list):
+        ax.plot(xx, yy, label=name)
+        pass
+    if title is not None:
+        ax.set_title(title)
+    ax.legend(loc="upper right")
+    ax.set_xlabel("Proportion train")
+    ax.set_ylabel("Test Error Rate")
+    pass
+
+
+def show_comparing_various_online_solvers(xx, yy_list, ax=None, title=None):
+    if ax is None:
+        show_comparing_various_online_solvers_via_plot(xx, yy_list, title)
+    else:
+        show_comparing_various_online_solvers_via_ax(xx, yy_list, ax, title)
+    pass
+
+
+def get_classifiers(estimators=None, n_samples=1):
+    if estimators is None:
+        classifiers = [
+            ("SGD", SGDClassifier(max_iter=100)),
+            ("ASGD", SGDClassifier(average=True)),
+            ("Perceptron", Perceptron()),
+            ("Passive-Aggressive I", PassiveAggressiveClassifier(loss='hinge',
+                                                         C=1.0, tol=1e-4)),
+            ("Passive-Aggressive II", PassiveAggressiveClassifier(loss='squared_hinge',
+                                                          C=1.0, tol=1e-4)),
+            ("SAG", LogisticRegression(solver='sag', tol=1e-1, C=1.e4 / n_samples))
+        ]
+        return classifiers
+    elif type(estimators) is not list:
+        estimator_name = str(estimators).split('(')[0]
+        return [[estimator_name, estimators]]
+    
+    estimators_names = list(map(lambda estimator: str(estimator).split('(')[0], estimators))
+    return list(zip(estimators_names, estimators))
+
+
+def fit_classifiers_comparing_various_online_solvers(classifiers, X, y, rounds, heldout):
+    yy_list = []
+    for name, clf in classifiers:
+        # print("training %s" % name)
+        rng = np.random.RandomState(42)
+        yy = []
+        for i in heldout:
+            yy_ = []
+            for r in range(rounds):
+                X_train, X_test, y_train, y_test = \
+                    train_test_split(X, y, test_size=i, random_state=rng)
+                clf.fit(X_train, y_train)
+                y_pred = clf.predict(X_test)
+                yy_.append(1 - np.mean(y_pred == y_test))
+                pass
+            yy.append(np.mean(yy_))
+        yy_list.append([yy, name])
+        # plt.plot(xx, yy, label=name)
+        pass
+    return yy_list
+
+
+def fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y, rounds, heldout, kernel_name='linear', n_components=2):
+    yy_list = []
+    for name, clf in classifiers:
+        # print("training %s" % name)
+        rng = np.random.RandomState(42)
+        yy = []
+        for i in heldout:
+            yy_ = []
+            for r in range(rounds):
+                try:
+                    X_train, X_test, y_train, y_test = \
+                        train_test_split(X, y, test_size=i, random_state=rng)
+                
+                    Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components=n_components, kernel=kernel_name, Xtrain=X_train, Xtest=X_test)
+
+                    clf.fit(Xtrain_transformed, y_train)
+                    y_pred = clf.predict(Xtest_transformed)
+                    yy_.append(1 - np.mean(y_pred == y_test))
+                except Exception as err:
+                    print(str(err))
+                    pass
+                pass
+            yy.append(np.mean(yy_))
+            pass
+        yy_list.append([yy, name])
+        # plt.plot(xx, yy, label=name)
+        pass
+    return yy_list
+
+
+def fit_classifiers_comparing_various_online_solvers_by_kernel_stratified(classifiers, X, y, rounds, heldout, kernel_name='linear', n_components=2, n_splits=5, random_state=42):
+    yy_list = []
+    for name, clf in classifiers:
+        # print("training %s" % name)
+        rng = np.random.RandomState(42)
+        yy = []
+        for i in heldout:
+            yy_ = []
+            sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=i, random_state=random_state)
+            for train_index, test_index in sss.split(X, y):
+                try:
+                    X_train, X_test, y_train, y_test = X[train_index], X[test_index], y[train_index], y[test_index]
+                
+                    Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components=n_components, kernel=kernel_name, Xtrain=X_train, Xtest=X_test)
+
+                    clf.fit(Xtrain_transformed, y_train)
+                    y_pred = clf.predict(Xtest_transformed)
+                    yy_.append(1 - np.mean(y_pred == y_test))
+                except Exception as err:
+                    print(str(err))
+                    print("heldout", heldout)
+                    pass
+                pass
+            yy.append(np.mean(yy_))
+            pass
+        yy_list.append([yy, name])
+        # plt.plot(xx, yy, label=name)
+        pass
+    return yy_list
+
+
+def try_comparing_various_online_solvers(avoid_func=False):
+    if avoid_func is True: return
+
+    heldout = [0.95, 0.90, 0.75, 0.50, 0.01]
+    rounds = 20
+    X, y = datasets.load_digits(return_X_y=True)
+
+    classifiers = get_classifiers(estimators=None, n_samples=X.shape[0])
+    
+
+    xx = 1. - np.array(heldout)
+    yy_list = fit_classifiers_comparing_various_online_solvers(classifiers, X, y, rounds, heldout)
+
+    show_comparing_various_online_solvers_via_plot(xx, yy_list)
+    pass
+
+
+# -----------------------------------------------------------------
+# Comparing various online solvers
+# -----------------------------------------------------------------
+
+def try_comparing_various_online_solvers_by_kernel(
+    X, y, kernels=None,
+    heldout=[0.95, 0.90, 0.75, 0.50, 0.01], rounds=20,
+    n_classes=-1, n_components=2,
+    estimators=SVC(kernel='linear'), cv=StratifiedKFold(2),
+    verbose=0,
+    show_fig=True, save_fig=False,
+    stratified_flag=False,
+    n_splits=5, random_state=42,
+    gridshape=None, figsize=(10, 10),
+    title="try comparing various online solvers by kernel", fig_name="try_comparing_various_online_solvers_by_kernel.png"
+    ):
+
+    assert n_components <= X.shape[1], f"n_components >= X.shape[1]: {n_components} > {X.shape[1]}"
+
+    kernels_list = get_kernels(kernels)
+
+    classifiers = get_classifiers(estimators=estimators, n_samples=X.shape[0])
+
+    # pprint(kernels_list)
+
+    if gridshape is not None:
+        axes = list()
+        assert figsize is not None, "figsize is None"
+        fig = plt.figure(figsize=figsize)
+        n = len(kernels_list)
+        nrows_tmp = n // 2 if n % 2 == 0 else n // 2 + 1
+        nrows, ncols = gridshape
+        assert (nrows * ncols) == (nrows_tmp * 2), "grid shape is wrong"
+        for ii in range(n):
+            axes.append(fig.add_subplot(nrows, ncols, ii+1))
+            pass
+
+
+    for ii, kernel_name in enumerate(kernels_list):
+
+        # print(kernel_name)
+        
+        xx = 1. - np.array(heldout)
+        if stratified_flag is True:
+            yy_list = fit_classifiers_comparing_various_online_solvers_by_kernel_stratified(classifiers, X, y, rounds, heldout, kernel_name=kernel_name, n_components=n_components, n_splits=n_splits, random_state=random_state)
+        else:
+            yy_list = fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y, rounds, heldout, kernel_name=kernel_name, n_components=n_components)
+        
+        title = f"{kernel_name.capitalize()}|PCs#={n_components}"
+
+        if gridshape is None:
+            show_comparing_various_online_solvers(xx, yy_list, title=title)
+        else:
+            show_comparing_various_online_solvers(xx, yy_list, ax=axes[ii], title=title)
+        pass
     pass
