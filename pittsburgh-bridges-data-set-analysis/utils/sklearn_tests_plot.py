@@ -868,16 +868,40 @@ def fit_show_voting_classifier_vs_all_bars(estimators, data, voting='soft', weig
 # Comparing various online solvers
 # =========================================================================================================================
 
-def show_comparing_various_online_solvers_via_plot(xx, yy_list):
+def show_comparing_various_online_solvers_via_plot(xx, yy_list, title=None):
     if len(yy_list) == 0: return
 
     for _, (yy, name) in enumerate(yy_list):
         plt.plot(xx, yy, label=name)
         pass
+    if title is not None:
+        plt.title(title)
     plt.legend(loc="upper right")
     plt.xlabel("Proportion train")
     plt.ylabel("Test Error Rate")
     plt.show()
+    pass
+
+
+def show_comparing_various_online_solvers_via_ax(xx, yy_list, ax, title=None):
+    if len(yy_list) == 0: return
+
+    for _, (yy, name) in enumerate(yy_list):
+        ax.plot(xx, yy, label=name)
+        pass
+    if title is not None:
+        ax.set_title(title)
+    ax.legend(loc="upper right")
+    ax.set_xlabel("Proportion train")
+    ax.set_ylabel("Test Error Rate")
+    pass
+
+
+def show_comparing_various_online_solvers(xx, yy_list, ax=None, title=None):
+    if ax is None:
+        show_comparing_various_online_solvers_via_plot(xx, yy_list, title)
+    else:
+        show_comparing_various_online_solvers_via_ax(xx, yy_list, ax, title)
     pass
 
 
@@ -903,7 +927,7 @@ def get_classifiers(estimators=None, n_samples=1):
 def fit_classifiers_comparing_various_online_solvers(classifiers, X, y, rounds, heldout):
     yy_list = []
     for name, clf in classifiers:
-        print("training %s" % name)
+        # print("training %s" % name)
         rng = np.random.RandomState(42)
         yy = []
         for i in heldout:
@@ -925,7 +949,7 @@ def fit_classifiers_comparing_various_online_solvers(classifiers, X, y, rounds, 
 def fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y, rounds, heldout, kernel_name='linear', n_components=2):
     yy_list = []
     for name, clf in classifiers:
-        print("training %s" % name)
+        # print("training %s" % name)
         rng = np.random.RandomState(42)
         yy = []
         for i in heldout:
@@ -955,7 +979,7 @@ def fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y
 def fit_classifiers_comparing_various_online_solvers_by_kernel_stratified(classifiers, X, y, rounds, heldout, kernel_name='linear', n_components=2, n_splits=5, random_state=42):
     yy_list = []
     for name, clf in classifiers:
-        print("training %s" % name)
+        # print("training %s" % name)
         rng = np.random.RandomState(42)
         yy = []
         for i in heldout:
@@ -1013,6 +1037,7 @@ def try_comparing_various_online_solvers_by_kernel(
     show_fig=True, save_fig=False,
     stratified_flag=False,
     n_splits=5, random_state=42,
+    gridshape=None, figsize=(10, 10),
     title="try comparing various online solvers by kernel", fig_name="try_comparing_various_online_solvers_by_kernel.png"
     ):
 
@@ -1020,11 +1045,23 @@ def try_comparing_various_online_solvers_by_kernel(
 
     classifiers = get_classifiers(estimators=estimators, n_samples=X.shape[0])
 
-    pprint(kernels_list)
+    # pprint(kernels_list)
+
+    if gridshape is not None:
+        axes = list()
+        fig = plt.figure(figsize=figsize)
+        n = len(kernels_list)
+        nrows_tmp = n // 2 if n % 2 == 0 else n // 2 + 1
+        nrows, ncols = gridshape
+        assert (nrows * ncols) == (nrows_tmp * 2), "grid shape is wrong"
+        for ii in range(n):
+            axes.append(fig.add_subplot(nrows, ncols, ii+1))
+            pass
+
 
     for ii, kernel_name in enumerate(kernels_list):
 
-        print(kernel_name)
+        # print(kernel_name)
         
         xx = 1. - np.array(heldout)
         if stratified_flag is True:
@@ -1032,6 +1069,11 @@ def try_comparing_various_online_solvers_by_kernel(
         else:
             yy_list = fit_classifiers_comparing_various_online_solvers_by_kernel(classifiers, X, y, rounds, heldout, kernel_name=kernel_name, n_components=n_components)
         
-        show_comparing_various_online_solvers_via_plot(xx, yy_list)
+        title = f"{kernel_name}|PCs#={n_components}"
+
+        if gridshape is None:
+            show_comparing_various_online_solvers(xx, yy_list, title=title)
+        else:
+            show_comparing_various_online_solvers(xx, yy_list, ax=axes[ii], title=title)
         pass
     pass
