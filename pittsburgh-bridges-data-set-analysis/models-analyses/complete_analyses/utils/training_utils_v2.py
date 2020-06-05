@@ -782,7 +782,7 @@ def grid_search_by_n_components(estimator, param_grid, X, y, n_components, clf_t
             # if show_plots: pass
         except Exception as err:
             err_msg = 'ERROR: ' + step_msg + '- error message: ' + str(err)
-            raise err
+            # raise err
             print(err_msg)
             errors_list.append(err_msg)
             pass
