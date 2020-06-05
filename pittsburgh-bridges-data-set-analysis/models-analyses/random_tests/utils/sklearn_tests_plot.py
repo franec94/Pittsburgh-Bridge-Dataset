@@ -545,7 +545,13 @@ def show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimat
     estimators_ = copy.deepcopy(estimators)
     estimators_.append(eclf)
     estimators_names = list(map(lambda estimator: str(estimator).split('(')[0], estimators_))
-    for idx, clf, tt in zip(product([0, 1], [0, 1]),
+
+    n_ = n // 2  if n % 2 == 0 else n // 2 + 1
+    array = list(range(n_))
+    tmp_product = product(array, [0, 1])
+
+    # for idx, clf, tt in zip(product([0, 1], [0, 1]),
+    for idx, clf, tt in zip(tmp_product,
                         # [clf1, clf2, clf3, eclf],
                         estimators_,
                         # ['Decision Tree (depth=4)', 'KNN (k=7)', 'Kernel SVM', 'Soft Voting']
@@ -559,6 +565,7 @@ def show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimat
         axarr[idx[0], idx[1]].scatter(X[:, 0], X[:, 1], c=y,
                                   s=20, edgecolor='k')
         axarr[idx[0], idx[1]].set_title(tt)
+        axarr[idx[0], idx[1]].legend()
 
     plt.show()
     pass
@@ -661,11 +668,17 @@ def fit_classifiers(X, y, voting_clf_params, estimators=None):
     # return clf1, clf2, clf3, eclf
     return estimators_, eclf
 
-def get_voting_clf_params(voting_clf_params):
+def get_voting_clf_params(voting_clf_params, estimators):
 
     if voting_clf_params is None:
-        voting_clf_params = dict(voting='soft',
-            weights=[2, 1, 2])
+        if len(estimators) != 3:
+            weights = [1] * len(estimators)
+            weights = list(map(lambda xi: xi[1] if xi[0] % 2 == 0 else xi[1] + 1, enumerate(weights)))
+            voting_clf_params = dict(voting='soft',
+                weights=weights)
+        else:
+            voting_clf_params = dict(voting='soft',
+                weights=[2, 1, 2])
 
     return voting_clf_params
 
@@ -685,7 +698,7 @@ def show_decision_boundaries_voting_classifier_by_kernel(
     n_components = 2
     kernels_list = get_kernels(kernel)
 
-    voting_clf_params_ = get_voting_clf_params(voting_clf_params)
+    voting_clf_params_ = get_voting_clf_params(voting_clf_params, estimators)
     for ii, kernel_name in enumerate(kernels_list):
 
         if stratified_folds is True:
