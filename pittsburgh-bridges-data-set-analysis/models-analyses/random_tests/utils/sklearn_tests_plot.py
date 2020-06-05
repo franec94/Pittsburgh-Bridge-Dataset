@@ -11,6 +11,7 @@ import copy
 from scipy import stats
 from scipy import interp
 from scipy import linalg
+from itertools import product
 from os import listdir; from os.path import isfile, join
 from itertools import islice
 from IPython import display
@@ -56,6 +57,8 @@ from sklearn.svm import LinearSVC, SVC
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 
+from sklearn.neighbors import KNeighborsClassifier
+
 # Bayesian Classifieres
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.naive_bayes import GaussianNB
@@ -64,6 +67,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import VotingClassifier
 
 # Import scikit-learn classes: Hyperparameters Validation utility functions.
 from sklearn.model_selection import cross_val_score
@@ -516,4 +520,186 @@ def test_shrinkage_covariance_estimation_by_kernel_Pca(
         """
         pass
 
+    pass
+
+
+# =========================================================================================================================
+# Plot the decision boundaries of a VotingClassifier
+# =========================================================================================================================
+
+def show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimators, eclf, gridshape=None, figsize=(10,8)):
+    # Plotting decision regions
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
+                     np.arange(y_min, y_max, 0.1))
+
+    n = len(estimators) + 1
+    if gridshape is not None:
+        nrows, ncols = gridshape
+    else:
+        nrows = n // 2  if n % 2 == 0 else n // 2 + 1
+        ncols = 2
+    f, axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=figsize)
+
+    estimators_ = copy.deepcopy(estimators)
+    estimators_.append(eclf)
+    estimators_names = list(map(lambda estimator: str(estimator).split('(')[0], estimators_))
+    for idx, clf, tt in zip(product([0, 1], [0, 1]),
+                        # [clf1, clf2, clf3, eclf],
+                        estimators_,
+                        # ['Decision Tree (depth=4)', 'KNN (k=7)', 'Kernel SVM', 'Soft Voting']
+                        estimators_names
+                        ):
+
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+
+        axarr[idx[0], idx[1]].contourf(xx, yy, Z, alpha=0.4)
+        axarr[idx[0], idx[1]].scatter(X[:, 0], X[:, 1], c=y,
+                                  s=20, edgecolor='k')
+        axarr[idx[0], idx[1]].set_title(tt)
+
+    plt.show()
+    pass
+
+def show_decision_boundaries_voting_classifier_via_plot(X, y, clf1, clf2, clf3, eclf):
+    # Plotting decision regions
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, 0.1),
+                     np.arange(y_min, y_max, 0.1))
+
+    f, axarr = plt.subplots(2, 2, sharex='col', sharey='row', figsize=(10, 8))
+
+    for idx, clf, tt in zip(product([0, 1], [0, 1]),
+                        [clf1, clf2, clf3, eclf],
+                        ['Decision Tree (depth=4)', 'KNN (k=7)',
+                         'Kernel SVM', 'Soft Voting']):
+
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+
+        axarr[idx[0], idx[1]].contourf(xx, yy, Z, alpha=0.4)
+        axarr[idx[0], idx[1]].scatter(X[:, 0], X[:, 1], c=y,
+                                  s=20, edgecolor='k')
+        axarr[idx[0], idx[1]].set_title(tt)
+
+    plt.show()
+    pass
+
+
+def try_decision_boundaries_voting_classifier_via_plot(avoid_func=False):
+    # Loading some example data
+    iris = datasets.load_iris()
+    X = iris.data[:, [0, 2]]
+    y = iris.target
+    
+    # Training classifiers
+    clf1 = DecisionTreeClassifier(max_depth=4)
+    clf2 = KNeighborsClassifier(n_neighbors=7)
+    clf3 = SVC(gamma=.1, kernel='rbf', probability=True)
+    eclf = VotingClassifier(estimators=[('dt', clf1), ('knn', clf2),
+                                    ('svc', clf3)],
+                        voting='soft', weights=[2, 1, 2])
+
+    clf1.fit(X, y)
+    clf2.fit(X, y)
+    clf3.fit(X, y)
+    eclf.fit(X, y)
+
+    show_decision_boundaries_voting_classifier_via_plot(X, y, clf1, clf2, clf3, eclf)
+    pass
+
+
+# -----------------------------------------------------------------
+# Plot the decision boundaries of a VotingClassifier
+# -----------------------------------------------------------------
+
+
+def fit_classifiers(X, y, voting_clf_params, estimators=None):
+
+    # pprint(voting_clf_params)
+    # pprint(estimators)
+
+    # Training classifiers
+    if estimators is None:
+        clf1 = DecisionTreeClassifier(max_depth=4)
+        clf2 = KNeighborsClassifier(n_neighbors=7)
+        clf3 = SVC(gamma=.1, kernel='rbf', probability=True)
+        estimators_ = [clf1, clf2, clf3]
+    elif type(estimators) is not list:
+        estimators_ = [estimators]
+    else:
+        estimators_ = estimators
+
+    if type(voting_clf_params['voting']) is list or type(voting_clf_params['voting']) is tuple:
+        voting = voting_clf_params['voting'][0]
+    else:
+        voting = voting_clf_params['voting']
+    weights = voting_clf_params['weights']
+
+    """
+    eclf = VotingClassifier(estimators=[('dt', clf1), ('knn', clf2),
+                                    ('svc', clf3)],
+                        voting=voting, weights=weights)
+    """
+    estimator_name_pairs = list(map(lambda estimator: (str(estimator).split('C')[0], estimator), estimators_))
+    eclf = VotingClassifier(estimators=estimator_name_pairs,
+                        voting=voting, weights=weights)
+
+    # pprint(estimators_)
+    for _, estimator in enumerate(estimators_):
+        estimator.fit(X, y)
+        pass
+
+    # clf1.fit(X, y)
+    # clf2.fit(X, y)
+    # clf3.fit(X, y)
+    eclf.fit(X, y)
+
+    # return clf1, clf2, clf3, eclf
+    return estimators_, eclf
+
+def get_voting_clf_params(voting_clf_params):
+
+    if voting_clf_params is None:
+        voting_clf_params = dict(voting='soft',
+            weights=[2, 1, 2])
+
+    return voting_clf_params
+
+
+def show_decision_boundaries_voting_classifier_by_kernel(
+    X, y, kernel,
+    voting_clf_params,
+    n_classes=-1,
+    estimators=SVC(kernel='linear'), cv=StratifiedKFold(2),
+    verbose=0,
+    show_fig=True, save_fig=False,
+    stratified_folds=False,
+    test_size=0.33, random_state=42, shuffle=True,
+    title="decision boundaries voting classifier ", fig_name="decision_boundaries_voting_classifier.png"
+):
+
+    n_components = 2
+    kernels_list = get_kernels(kernel)
+
+    voting_clf_params_ = get_voting_clf_params(voting_clf_params)
+    for ii, kernel_name in enumerate(kernels_list):
+
+        if stratified_folds is True:
+            Xtrain_, Xtest_, ytrain_, ytest_ = get_stratified_groups(X, y)
+        else:
+            Xtrain_, Xtest_, ytrain_, ytest_ = train_test_split(X, y, test_size=test_size, random_state=random_state, shuffle=shuffle)
+        
+        Xtrain_transformed, Xtest_transformed = KernelPCA_transform_data(n_components=n_components, kernel=kernel_name, Xtrain=Xtrain_, Xtest=Xtest_)
+
+        # clf1, clf2, clf3, eclf = fit_classifiers(Xtrain_transformed, ytrain_, voting_clf_params_)
+        estimators, eclf = fit_classifiers(Xtrain_transformed, ytrain_, voting_clf_params_, estimators=estimators)
+
+
+        # show_decision_boundaries_voting_classifier_via_plot(X, y, clf1, clf2, clf3, eclf)
+        show_decision_boundaries_voting_classifier_via_plot_estimators(X, y, estimators, eclf, gridshape=None, figsize=(10,8))
+        pass
     pass
