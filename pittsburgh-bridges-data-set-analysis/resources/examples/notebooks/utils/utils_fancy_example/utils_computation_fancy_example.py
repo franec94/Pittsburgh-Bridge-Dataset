@@ -5,6 +5,9 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+
 def raw_examples():
     a, b = 4, 4
     t = a + b
@@ -12,6 +15,7 @@ def raw_examples():
     x = (3/4) * a + (1/2) * b
     y = (1/4) * a + (1/2) * b
     return dict(a=a,b=b,x=x,y=y, t=t)
+
 
 def raw_examples_v2():
     a, b = 4, 4
@@ -27,6 +31,8 @@ def raw_examples_v2():
     y = w_ya * a + w_yb * b
 
     return dict(a=a,b=b,x=x,y=y, t=t)
+
+# ----------------------------------------------------------------------------------------------------------------------
 
 def get_data(t, verbose=0):
     a_r = np.arange(1, t)
@@ -52,6 +58,7 @@ def get_data(t, verbose=0):
         print(result_a, )
     return result_a, result_b
 
+
 def get_weights():
     w_y1a = (3/4)
     w_y1b = (1/2)
@@ -64,6 +71,7 @@ def get_weights():
     
     w = np.array([w_y1, w_y2])
     return w
+
 
 def fit_problem(data, w, t, whole_solutions=False, verbose=0):
     a_els, b_els = data
@@ -97,12 +105,43 @@ def fit_problem(data, w, t, whole_solutions=False, verbose=0):
         pass
     return np.array(sol)
 
+
 def solve_problem(t, verbose=0, whole_solutions=False):
     data = get_data(t, verbose)
     w = get_weights()
     sol = fit_problem(data, w, t, whole_solutions, verbose=verbose)
     return sol
 
+
+def solve_problem_v2(t_min, t_max, verbose=0, whole_solutions=False):
+    
+    # Input variables
+    data = get_data(t=t_max, verbose=0)
+    w = get_weights()
+    
+    # Variables for running loop and storing solutions
+    t_attempts = np.arange(t_min, t_max, 2)
+    n = len(t_attempts)
+    results = []
+
+    for t in t_attempts:
+        
+        # Prepare variables for solving problem
+        a_els, b_els = data
+        indxs_a, indxs_b = np.where(a_els[:] <= t) , np.where(b_els[:] <= t)
+        data_ = [a_els[indxs_a], b_els[indxs_b]]
+        
+        sol = fit_problem(data_, w, t, whole_solutions=False, verbose=0)
+        if verbose == 1:
+            print(t, sol, len(sol))
+            pass
+        results.append(sol)
+        pass
+    # return n, results    
+    return np.arange(t_min, t_max, 2), results
+
+
+# ----------------------------------------------------------------------------------------------------------------------
 def create_data_frame(raw_data):
     data = []
     for ii, a_raw_data in enumerate(raw_data):
@@ -116,3 +155,4 @@ def create_data_frame(raw_data):
     columns = 'x,y,a,b,t'.split(',')
     df = pd.DataFrame(data=data, columns=columns)
     return df
+ 
