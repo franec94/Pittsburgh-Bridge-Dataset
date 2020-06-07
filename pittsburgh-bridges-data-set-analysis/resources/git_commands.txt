@@ -56,3 +56,8 @@ Create New Branch Procedure:
   $ git branch -D [name_of_your_new_branch]
 - 9.b Delete the branch on github :
   $ git push origin :[name_of_your_new_branch]
+
+Comments:
+The only difference is the: to say delete, you can do it too by using GitHub interface to remove branch: https://help.github.com/articles/deleting-unused-branches.
+
+If you want to change default branch, it's so easy with GitHub, in your fork go into Admin and in the drop-down list default branch choose what you want.
