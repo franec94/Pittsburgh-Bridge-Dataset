@@ -3,7 +3,10 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 
+import itertools
+
 import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
 
 
 # -------------------------------------------------------------------------------------------
@@ -144,3 +147,77 @@ def plot_stem_line_scatter(x, y, xlabel='x', ylabel='y', title='Plots', fig_name
         fig.savefig(fig_name)
         pass
     pass
+
+# -------------------------------------------------------------------------------------------
+# jointplot
+# -------------------------------------------------------------------------------------------
+
+def get_axes_sns_plots(n_plots, gridshape, figsize):
+    if gridshape is None:
+        axes = [None] * n_plots
+        return None, axes
+    else:
+        axes = []
+        nrows, ncols = gridshape
+        assert figsize is not None, f'figsize is None'
+        fig = plt.figure(figsize=figsize)
+        for ii in range(n_plots):
+            axes.append(fig.add_subplot(nrows, ncols, ii+1))
+            pass
+        pass
+    return fig, axes
+
+def jointplot_df_sns(df, kind='reg', columns=None, gridshape=None, figsize=(10, 10)):
+    if columns is None:
+        columns = df.columns
+    
+    n_plots = len(columns) * (len(columns)-1)//2
+    fig, axes = get_axes_sns_plots(n_plots, gridshape, figsize)
+    
+    pairs_columns = []
+    for ii, c1 in enumerate(columns[:-1]):
+        for jj, c2 in enumerate(columns[ii+1:]):
+            pairs_columns.append([c1, c2])
+            pass
+        pass
+    
+    for ii, (x, y) in enumerate(pairs_columns):
+        sns.jointplot(x=x, y=y, data=df, kind=kind, ax=axes[ii])
+    pass
+
+
+def violinplot_df_sns(df, columns=None, gridshape=None, figsize=(10, 10)):
+    if columns is None:
+        columns = df.columns
+    
+    n_plots = len(columns) * (len(columns)-1)//2
+    fig, axes = get_axes_sns_plots(n_plots, gridshape, figsize)
+    
+    pairs_columns = []
+    for ii, c1 in enumerate(columns[:-1]):
+        for jj, c2 in enumerate(columns[ii+1:]):
+            pairs_columns.append([c1, c2])
+            pass
+        pass
+    for ii, (x, y) in enumerate(pairs_columns):
+        sns.violinplot(x = x, y = y, data = df, palette = 'rainbow', ax=axes[ii])
+    pass
+
+
+def boxplot_df_sns(df, hue, columns=None, gridshape=None, figsize=(10, 10)):
+    if columns is None:
+        columns = df.columns
+    
+    n_plots = len(columns) * (len(columns)-1)//2
+    fig, axes = get_axes_sns_plots(n_plots, gridshape, figsize)
+    
+    pairs_columns = []
+    for ii, c1 in enumerate(columns[:-1]):
+        for jj, c2 in enumerate(columns[ii+1:]):
+            pairs_columns.append([c1, c2])
+            pass
+        pass
+    for ii, (x, y) in enumerate(pairs_columns):
+        sns.boxplot(x = x, y = y,  data = df, hue=hue, palette = 'coolwarm', ax=axes[ii])
+    pass
+
