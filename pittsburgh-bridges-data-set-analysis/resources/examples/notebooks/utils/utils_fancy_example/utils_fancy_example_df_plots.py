@@ -115,8 +115,13 @@ def show_df_bars(df, target_name, n_elements, columns=None, gridshape=None, figs
     df.loc[:n_elements, columns].groupby([target_name]).count().plot(kind='bar', stacked=True, ax=axes[pos])
     pass
 
+
 def show_df_bars_scaled(df, target_name, n_elements, columns=None, axis=1, gridshape=None, figsize=(10,10)):
-    n = 2
+    
+    # df.loc[:20, [TARGET, 'x']].groupby([TARGET]).count().head(5).apply(lambda x: x*100/sum(x), axis=0).plot(kind="bar", stacked=True)
+    # df.loc[:20, [TARGET, 'x']].groupby([TARGET]).groups.keys()
+    
+    n = 1
     fig, axes = get_axes_show_df_plotting(n=n, gridshape=gridshape, figsize=figsize)
     
     if columns is None:
@@ -124,12 +129,11 @@ def show_df_bars_scaled(df, target_name, n_elements, columns=None, axis=1, grids
     elif type(columns) is not list:
         columns = [columns]
     
-    # scaled_data = df.apply(lambda x: x*100/sum(x), axis=axis)
-    scaled_data = df.apply(lambda x: x/sum(x), axis=axis)
-    
     pos = 0
-    scaled_data.loc[:n_elements, columns].groupby([target_name]).size().plot(kind='bar', stacked=True, ax=axes[pos])
+    # df.loc[:n_elements, columns].groupby([target_name]).size().plot(kind='bar', stacked=True, ax=axes[pos])
     
-    pos = pos + 1
-    scaled_data.loc[:n_elements, columns].groupby([target_name]).count().apply(lambda x: x*100/sum(x), axis=axis).plot(kind='bar', stacked=True, ax=axes[pos])
+    # pos = pos + 1
+    rescaled_lambda = lambda x: x*100/sum(x)
+    # rescaled_lambda = lambda x: x/sum(x)
+    df.loc[:n_elements, columns].groupby([target_name]).count().apply(rescaled_lambda, axis=axis).plot(kind='bar', stacked=True, ax=axes[pos])
     pass
