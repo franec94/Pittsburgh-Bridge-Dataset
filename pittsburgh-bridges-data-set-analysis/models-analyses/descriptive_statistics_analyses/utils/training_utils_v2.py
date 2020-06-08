@@ -512,7 +512,7 @@ def random_forest_classifier_grid_search(X, y, num_features=None, parmas_random_
 def fit_all_by_n_components(
     estimators_list, estimators_names,
     X, y,
-    n_components=2,
+    n_components=2, random_state=0, test_size=0.33,
     pca_kernels_list=None, cv_list=None,
     show_plots=False, plot_dest="figures",
     verbose=0):
@@ -544,6 +544,8 @@ def fit_all_by_n_components(
             clf_type=f"{estimator_name}", \
             verbose=verbose,
             cv_list=cv_list,
+            random_state=random_state,
+            test_size=test_size,
             pca_kernels_list=pca_kernels_list,
             show_plots=show_plots,
             plot_dest=plot_dest_list[ii])
@@ -559,7 +561,8 @@ def fit_by_n_components(
     estimator,
     X, y,
     n_components, clf_type,
-    random_state=0, plot_dest="figures",
+    random_state=0, test_size=0.33,
+    plot_dest="figures",
     pca_kernels_list=None, cv_list=None,
     show_plots=False, show_errors=False,
     verbose=0):
@@ -573,7 +576,7 @@ def fit_by_n_components(
     # print(pca_kernels_list)
     
     Xtrain, Xtest, ytrain, ytest = train_test_split(
-        X, y,
+        X, y, test_size=test_size,
         random_state=random_state)
 
     kernels_list = ['linear', 'poly', 'rbf', 'cosine',]
@@ -623,6 +626,7 @@ def fit_by_n_components(
                 pass
         except Exception as err:
             # Handle error if one occurs
+            raise err
             print('ERROR: ' + step_msg + ' ' + str(err))
             errors_list.append('ERROR: ' + step_msg + ' ' + str(err))
             pass
