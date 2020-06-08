@@ -742,7 +742,10 @@ def show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors, title="a
     if subplots is True:
         fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True, layout=(2,2), subplots=subplots, ax=ax)
     else:
-        fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True)
+        if ax is None:
+            fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True)
+        else:
+            fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True, ax=ax)
     # plt.show()
     return fig
 
@@ -765,7 +768,10 @@ def show_pie_chart_corr_matrix(data, colors, title="a pie chart for corr matrix"
         fig = df.plot.pie(y='Correlation', title=title, figsize=(6, 6), layout=(2,2), autopct=make_autopct(df["Correlation"].values), subplots=subplots, ax=ax)
     else:
         # fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(5, 5), autopct="%.2f%%",)
-        fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors)
+        if ax is None:
+            fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors)
+        else:
+            fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors, ax=ax)
     return fig
 
 
@@ -802,7 +808,10 @@ def show_pie_chart_corr_matrix_finer_analysis(data, colors, title="a pie chart f
         fig = df.plot.pie(y='Correlation', title=title, figsize=(6, 6), layout=(2,2), autopct=make_autopct(df["Correlation"].values), subplots=subplots, ax=ax)
     else:
         # fig = df.plot.pie(y='Correlation', figsize=(5, 5), autopct='%1.1f%%',)
-        fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors)
+        if ax is None:
+            fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors)
+        else:
+            fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors, ax=ax)
     # fig = px.pie(df, values='pop', names='country', title='Population of European continent')
     # fig.show()
     return fig
@@ -989,6 +998,54 @@ def prepare_data_corr_matrix_pie_finer_analysis(corr_matrix):
     data_norm = Normalizer().fit_transform(X=data[:]).flatten()
     return data_norm, data.flatten()
 
+
+def get_axes_corr_plots(n, figsize, gridshape=None):
+
+    if gridshape is not None:
+        axes = list()
+        fig = plt.figure(figsize=figsize)
+        nrows_tmp = n // 2 if n % 2 == 0 else n // 2 + 1
+        nrows, ncols = gridshape
+        assert (nrows * ncols) == (nrows_tmp * 2), "grid shape is wrong"
+        for ii in range(n):
+            axes.append(fig.add_subplot(nrows, ncols, ii+1))
+            pass
+    else:
+        axes = [None] * n
+        return None, axes
+    return fig, axes
+
+
+def show_pie_hist_charts_abs_corr(corr_matrix, figsize=(10, 10), gridshape=None):
+
+    colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:brown", "tab:purple"]
+
+    n = 2
+    fig, axes = get_axes_corr_plots(n, figsize=figsize, gridshape=gridshape)
+    
+    data_norm, data = prepare_data_corr_matrix_pie(corr_matrix)
+    _ = show_pie_chart_corr_matrix(data, colors[:3], ax=axes[0])
+
+    data, data_2 = prepare_data_corr_matrix_hist(corr_matrix)
+    _ = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors[:3], ax=axes[1])
+    pass
+
+
+def show_pie_hist_charts_corr(corr_matrix, figsize=(10, 10), gridshape=None):
+
+    colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:brown", "tab:purple"]
+
+    n = 2
+    fig, axes = get_axes_corr_plots(n, figsize=figsize, gridshape=gridshape)
+    
+    data_norm, data = prepare_data_corr_matrix_pie_finer_analysis(corr_matrix)
+    _ = show_pie_chart_corr_matrix_finer_analysis(data, colors, ax=axes[0])
+
+    colors=["blue", "orange", "green", "red", "purple", "brown"]
+
+    data, data_2 = prepare_data_corr_matrix_hist_v2(corr_matrix)
+    _ = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors, ax=axes[1])
+    pass
 # --------------------------------------------------------------------------- #
 # Pie Charts in Python:
 # --------------------------------------------------------------------------- #
