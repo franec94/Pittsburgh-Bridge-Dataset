@@ -237,13 +237,16 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             y_true, y_pred = ytest_, grid.best_estimator_.predict(Xtest_transformed_)
             # print(classification_report(y_true, y_pred))
             # df = from_class_report_to_df(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
-            df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
-            res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=True)
             # print(df)
             if show_widget is True:
+                res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=True)
+                df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
                 display.display(df)
             else:
-                print(df.head(df.shape[0]))
+                res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=False)
+                print(res_clf_report_dict)
+                df = res_clf_report_dict
+                pass
             df_list.append(df)
             # print()
             pass
