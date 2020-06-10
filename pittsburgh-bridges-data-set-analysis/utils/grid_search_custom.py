@@ -167,7 +167,7 @@ def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, yte
     pass
 
 
-def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures", flag_no_computation=False):
+def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, random_state=0, title=None, verbose=0, show_figures=False, plot_dest="figures", flag_no_computation=False):
     # Stratified-K-Fold Cross-Validation
     if verbose == 1:
         # print()
@@ -189,6 +189,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     for _ in scores:
         # print("# Tuning hyper-parameters for %s" % score)
         # print()
+        # if 'random_state' not in param_grid.keys(): param_grid['random_state'] = random_state
         grid = GridSearchCV(
             estimator=clf, param_grid=param_grid,
             # scoring=['accuracy', 'f1'],
