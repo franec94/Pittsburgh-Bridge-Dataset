@@ -243,8 +243,9 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
                 df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
                 display.display(df)
             else:
-                res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=False)
-                print(res_clf_report_dict)
+                res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=True)
+                res_clf_report_dict_str = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=False)
+                print(res_clf_report_dict_str)
                 df = res_clf_report_dict
                 pass
             df_list.append(df)
@@ -318,8 +319,8 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
 
     acc_test = res_clf_report_dict['accuracy']
 
-    print("[*] Best Score:", "[*] AUC", sep='t')
-    print(f"{grid.best_score_:2.f}", f"{auc:2.f}", sep='t')
+    print("[*] Best Score:", "[*] AUC", sep='\t')
+    print(f"{grid.best_score_:2.f}", f"{auc:2.f}", sep='\t')
 
     return grid, auc, acc_test, df_list
 
