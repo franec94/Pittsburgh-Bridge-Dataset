@@ -167,7 +167,7 @@ def grid_search_loo_cross_validation(clf, param_grid, Xtrain, ytrain, Xtest, yte
     pass
 
 
-def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, title=None, verbose=0, show_figures=False, plot_dest="figures", flag_no_computation=False):
+def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components, kernel, n_splits=2, random_state=0, title=None, verbose=0, show_figures=False, plot_dest="figures", flag_no_computation=False, show_widget=False):
     # Stratified-K-Fold Cross-Validation
     if verbose == 1:
         # print()
@@ -189,6 +189,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     for _ in scores:
         # print("# Tuning hyper-parameters for %s" % score)
         # print()
+        # if 'random_state' not in param_grid.keys(): param_grid['random_state'] = random_state
         grid = GridSearchCV(
             estimator=clf, param_grid=param_grid,
             # scoring=['accuracy', 'f1'],
@@ -219,8 +220,8 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             # pprint(grid.best_estimator_)
 
             # print()
-            print('[*] Best Score:')
-            pprint(grid.best_score_)
+            # print('[*] Best Score:')
+            # pprint(grid.best_score_)
             pass
             # print("Grid scores on development set:")
             # print()
@@ -239,7 +240,10 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
             df = create_widget_class_report(y_true, y_pred, target_names=['class 0', 'class 1'], support=len(y_true))
             res_clf_report_dict = classification_report(y_true, y_pred, target_names=['class 0', 'class 1'], output_dict=True)
             # print(df)
-            display.display(df)
+            if show_widget is True:
+                display.display(df)
+            else:
+                print(df.head(df.shape[0]))
             df_list.append(df)
             # print()
             pass
@@ -310,6 +314,9 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     plt.show()
 
     acc_test = res_clf_report_dict['accuracy']
+
+    print("[*] Best Score:", "[*] AUC", sep='t')
+    print(f"{grid.best_score_:2.f}", f"{auc:2.f}", sep='t')
 
     return grid, auc, acc_test, df_list
 
