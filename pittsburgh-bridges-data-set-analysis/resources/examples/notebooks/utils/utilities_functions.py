@@ -336,26 +336,36 @@ def get_stratified_groups(X, y):
     return Xtrain_, Xtest_, ytrain_, ytest_
 
 
-def create_widget_list_df(df_list):
+def create_widget_list_df(df_list, show_widget=False):
     res_list = []
     for df in df_list:
-        widget = widgets.Output()
-        with widget: display.display(df); pass
-        res_list.append(widget)
-        pass
-    hbox = widgets.HBox(res_list)
-    return hbox
+        if show_widget is True:
+            widget = widgets.Output()
+            with widget: display.display(df); pass
+            res_list.append(widget)
+        else:
+            print(df)
+    
+    if show_widget is True:
+        hbox = widgets.HBox(res_list)
+        return hbox
+    return
 
 
-def create_widget_list_df_vertical(df_list):
+def create_widget_list_df_vertical(df_list, show_widget=False):
     res_list = []
     for df in df_list:
-        widget = widgets.Output()
-        with widget: display.display(df); pass
-        res_list.append(widget)
+        if show_widget is True:
+            widget = widgets.Output()
+            with widget: display.display(df); pass
+            res_list.append(widget)
+        else:
+            print(df)
         pass
-    vbox = widgets.VBox(res_list)
-    return vbox
+    if show_widget is True:
+        vbox = widgets.VBox(res_list)
+        return vbox
+    return
 
 
 def merge_dfs_by_common_columns(df1, df2, axis=0, ignore_index=True):
