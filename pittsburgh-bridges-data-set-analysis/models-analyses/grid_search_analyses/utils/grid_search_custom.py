@@ -320,7 +320,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
     acc_test = res_clf_report_dict['accuracy']
 
     print("[*] Best Score:", "[*] AUC", sep='\t')
-    print(f"{grid.best_score_:2.f}", f"{auc:2.f}", sep='\t')
+    print(f"{grid.best_score_:.2f}", f"{auc:.2f}", sep='\t')
 
     return grid, auc, acc_test, df_list
 
