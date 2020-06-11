@@ -35,9 +35,13 @@ import seaborn as sns;  sns.set(style="ticks", color_codes=True) # sns.set()
 # =========================================================================== #
 # UTILS IMPORTS (Done by myself)
 # =========================================================================== #
-from utils.load_dataset_pittsburg_utils import load_brdiges_dataset; from utils.display_utils import *
-from utils.preprocessing_utils import *; from utils.training_utils import *
-from utils.sklearn_functions_custom import *; from utils.learning_curves_custom import *
+from utils.load_dataset_pittsburg_utils import load_brdiges_dataset;
+from utils.display_utils import *
+from utils.preprocessing_utils import *;
+from utils.training_utils import *
+from utils.sklearn_functions_custom import *;
+from utils.learning_curves_custom import *
+from utils.get_variables_util import *
 from utils.training_utils_v2 import fit_by_n_components, fit_all_by_n_components, grid_search_all_by_n_components
 
 # =========================================================================== #
@@ -47,7 +51,7 @@ from sklearn.decomposition import PCA, KernelPCA
 
 # Import scikit-learn classes: models (Estimators).
 from sklearn.naive_bayes import GaussianNB, MultinomialNB   # Non-parametric Generative Model
-from sklearn.linear_model import LogisticRegression         # Parametric Linear Discriminative Model
+from sklearn.linear_model import LogisticRegression, SGDClassifier       # Parametric Linear Discriminative Model
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC                          # Parametric Linear Discriminative "Support Vector Classifier"
 from sklearn.tree import DecisionTreeClassifier      # Non-parametric Model

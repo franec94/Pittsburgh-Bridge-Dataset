@@ -390,7 +390,7 @@ def reshape_dfs_acc(list_df, num_col=4, n_cp_list=[2, 9, 11]):
     return updated_list
 
 
-def show_df_with_mean_at_bottom(df):
+def show_df_with_mean_at_bottom(df, show_widget=False):
     # show_df_with_mean_at_bottom(df_strfd) # df_strfd.head(df_strfd.shape[0])
     def s2f(a_str):
         if a_str.startswith("("):
@@ -401,8 +401,13 @@ def show_df_with_mean_at_bottom(df):
         return "%.2f" % (a_num, )
     data = np.array(list(map(f2s, result.values)))
     df_tmp = pd.DataFrame(data=[data], columns=df.columns, index=["Mean Values"])
-    vbox = create_widget_list_df_vertical([df, df_tmp])
-    display.display(vbox)
+    if show_widget is True:
+        vbox = create_widget_list_df_vertical([df, df_tmp])
+        display.display(vbox)
+    else:
+        df_copy = copy.deepcopy(df)
+        res = pd.concat([df_copy, df_tmp])
+        return res
     pass
 
 

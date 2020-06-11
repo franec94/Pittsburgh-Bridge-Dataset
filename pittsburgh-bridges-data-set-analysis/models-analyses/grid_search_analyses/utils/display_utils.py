@@ -82,6 +82,31 @@ from sklearn.decomposition import PCA, KernelPCA
 # FUNCTIONS
 # =========================================================================== #
 
+def show_table_pc_analysis(X):
+    n_components = X.shape[1]; pca = PCA(n_components=n_components) # pca = PCA(n_components=2)
+    pca = pca.fit(X); X_pca = pca.transform(X) # X_pca = pca.fit_transform(X)
+    print(f"Cumulative varation explained(percentage) up to given number of pcs:")
+
+    tmp_data = []
+    principal_components = [pc for pc in '2,5,6,7,8,9,10'.split(',')]
+    for _, pc in enumerate(principal_components):
+        n_components = int(pc)
+    
+        cum_var_exp_up_to_n_pcs = np.cumsum(pca.explained_variance_ratio_)[n_components-1]
+        # print(f"Cumulative varation explained up to {n_components} pcs = {cum_var_exp_up_to_n_pcs}")
+        # print(f"# pcs {n_components}: {cum_var_exp_up_to_n_pcs*100:.2f}%")
+        tmp_data.append([n_components, cum_var_exp_up_to_n_pcs * 100])
+        pass
+    tmp_df = pd.DataFrame(data=tmp_data, columns=['# PCS', 'Cumulative Varation Explained (percentage)'])
+    # tmp_df.head(len(tmp_data))
+    return tmp_df.head(len(tmp_data))
+
+def show_table_summary_grid_search(df_gs, df_auc_gs):
+    data = [[xx] for xx in df_auc_gs.values.flatten()]
+    tmp_df = pd.DataFrame(data, columns=['AUC'], index=df_gs.index)
+    res = pd.concat([tmp_df, df_gs], axis=1)
+    return res
+
 # --------------------------------------------------------------------------- #
 # Descriptive Statistics Section
 # --------------------------------------------------------------------------- #
@@ -272,7 +297,7 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
 # show_frequency_distribution_predictor
 # --------------------------------------------------------------------------- #
 
-def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0):
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0, show_widget=False):
     
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
@@ -320,8 +345,12 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
                     df_1 = plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1], verbose=verbose)
                     df_2 = plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2], verbose=verbose)
                     if verbose == 1:
-                        res = create_widget_list_obj([df_1, df_2])
-                        display.display(res)
+                        if show_widget == True:
+                            res = create_widget_list_obj([df_1, df_2])
+                            display.display(res)
+                        else:
+                            print(df_1)
+                            pass
                     pass
                 else:
                     sns.barplot(l, predictor_count.values, alpha=0.9)
