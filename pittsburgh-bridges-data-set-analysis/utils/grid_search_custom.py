@@ -326,7 +326,7 @@ def grid_search_stratified_cross_validation(clf, param_grid, X, y, n_components,
 
     plt.show()
 
-    return grid, auc, acc_test, df_list
+    return grid, auc, acc_test, df_list, pvalue
 
 
 def compute_k_neighbors_vs_accuracy_wrapper(param_grid, Xtrain, ytrain, ax=None):

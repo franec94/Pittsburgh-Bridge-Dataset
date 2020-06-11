@@ -101,10 +101,14 @@ def show_table_pc_analysis(X):
     # tmp_df.head(len(tmp_data))
     return tmp_df.head(len(tmp_data))
 
-def show_table_summary_grid_search(df_gs, df_auc_gs):
-    data = [[xx] for xx in df_auc_gs.values.flatten()]
-    tmp_df = pd.DataFrame(data, columns=['AUC'], index=df_gs.index)
-    res = pd.concat([tmp_df, df_gs], axis=1)
+def show_table_summary_grid_search(df, df_auc, df_pvalue):
+    data_1 = [[xx] for xx in df_auc.values.flatten()]
+    tmp_df_auc = pd.DataFrame(data_1, columns=['AUC(%)'], index=df.index)
+
+    data_2 = [[f"{float(xx)*100:.2f}"] for xx in df_pvalue.values.flatten()]
+    tmp_df_pvalue = pd.DataFrame(data_2, columns=['P-Value(%)'], index=df.index)
+
+    res = pd.concat([tmp_df_auc, tmp_df_pvalue, df], axis=1)
     return res
 
 # --------------------------------------------------------------------------- #

@@ -260,11 +260,11 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names, fl
 
     if flag_no_computation is True:
         return None, None
-    data, data_auc = [], []
+    data, data_auc, data_pvlaue = [], [], []
     col_params_names = None
     for _, a_grid_search in enumerate(grid_searchs):
-        tmp_res, tmp_auc = [], []
-        for _, (a_grid, _, auc, acc_test) in enumerate(a_grid_search):
+        tmp_res, tmp_auc, tmp_pvalue = [], [], []
+        for _, (a_grid, _, auc, acc_test, pvalue) in enumerate(a_grid_search):
             
             best_params_values = list(map(str, a_grid.best_params_.values()))
             # best_score = "%.2f" % (a_grid.best_score_,)
@@ -278,13 +278,16 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names, fl
 
             col_params_names = list(a_grid.best_params_.keys())
             data.append(tmp_res)
+
+            tmp_pvalue.append("%.5f" % (pvalue,))
             pass
         # data.append(tmp_res)
         data_auc.append(tmp_auc)
+        data_pvlaue.append(tmp_pvalue)
         pass
 
     # col_names = [f'{k} Acc' for k in pca_kernels]
-    col_names = ["Acc Train", "Acc Test"] + col_params_names
+    col_names = ["Acc Train(%)", "Acc Test(%)"] + col_params_names
     indeces = []
     for estimator_name in estimator_names:
         indeces.extend([f'{estimator_name} {k}' for k in pca_kernels])
@@ -292,7 +295,9 @@ def prepare_output_df_grid_search(grid_searchs, pca_kernels, estimator_names, fl
     
     col_names = [f'{k} AUC' for k in pca_kernels]
     df_auc = pd.DataFrame(data=data_auc, columns=col_names,  index=estimator_names)
-    return df, df_auc
+    col_names = [f'{k} P-Value' for k in pca_kernels]
+    df_pvalue = pd.DataFrame(data=data_pvlaue, columns=col_names,  index=estimator_names)
+    return df, df_auc, df_pvalue
 
 
 # --------------------------------------------------------------------------- #
