@@ -101,9 +101,7 @@ def show_table_pc_analysis(X):
     # tmp_df.head(len(tmp_data))
     return tmp_df.head(len(tmp_data))
 
-def show_table_summary_grid_search(df, df_auc, df_pvalue, flag_return=False):
-    if flag_return is True:
-        return
+def show_table_summary_grid_search(df, df_auc, df_pvalue):
     data_1 = [[xx] for xx in df_auc.values.flatten()]
     tmp_df_auc = pd.DataFrame(data_1, columns=['AUC(%)'], index=df.index)
 

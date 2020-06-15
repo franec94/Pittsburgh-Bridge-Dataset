@@ -21,7 +21,6 @@ import itertools
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 import chart_studio.plotly.plotly as py
-from matplotlib.colors import Normalize
 import plotly.express as px
 import matplotlib.image as mpimg
 
@@ -50,7 +49,7 @@ from sklearn.metrics import roc_curve, auc
 
 # Classifiers Imports
 # SVMs Classifieres
-from sklearn.svm import LinearSVC, SVC
+from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn import svm
 
@@ -81,37 +80,6 @@ from sklearn.decomposition import PCA, KernelPCA
 # =========================================================================== #
 # FUNCTIONS
 # =========================================================================== #
-
-def show_table_pc_analysis(X):
-    n_components = X.shape[1]; pca = PCA(n_components=n_components) # pca = PCA(n_components=2)
-    pca = pca.fit(X); X_pca = pca.transform(X) # X_pca = pca.fit_transform(X)
-    print(f"Cumulative varation explained(percentage) up to given number of pcs:")
-
-    tmp_data = []
-    principal_components = [pc for pc in '2,5,6,7,8,9,10'.split(',')]
-    for _, pc in enumerate(principal_components):
-        n_components = int(pc)
-    
-        cum_var_exp_up_to_n_pcs = np.cumsum(pca.explained_variance_ratio_)[n_components-1]
-        # print(f"Cumulative varation explained up to {n_components} pcs = {cum_var_exp_up_to_n_pcs}")
-        # print(f"# pcs {n_components}: {cum_var_exp_up_to_n_pcs*100:.2f}%")
-        tmp_data.append([n_components, cum_var_exp_up_to_n_pcs * 100])
-        pass
-    tmp_df = pd.DataFrame(data=tmp_data, columns=['# PCS', 'Cumulative Varation Explained (percentage)'])
-    # tmp_df.head(len(tmp_data))
-    return tmp_df.head(len(tmp_data))
-
-def show_table_summary_grid_search(df, df_auc, df_pvalue, flag_return=False):
-    if flag_return is True:
-        return
-    data_1 = [[xx] for xx in df_auc.values.flatten()]
-    tmp_df_auc = pd.DataFrame(data_1, columns=['AUC(%)'], index=df.index)
-
-    data_2 = [[f"{float(xx)*100:.2f}"] for xx in df_pvalue.values.flatten()]
-    tmp_df_pvalue = pd.DataFrame(data_2, columns=['P-Value(%)'], index=df.index)
-
-    res = pd.concat([tmp_df_auc, tmp_df_pvalue, df], axis=1)
-    return res
 
 # --------------------------------------------------------------------------- #
 # Descriptive Statistics Section
@@ -303,7 +271,7 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
 # show_frequency_distribution_predictor
 # --------------------------------------------------------------------------- #
 
-def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0, show_widget=False):
+def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0):
     
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
@@ -351,12 +319,8 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
                     df_1 = plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1], verbose=verbose)
                     df_2 = plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2], verbose=verbose)
                     if verbose == 1:
-                        if show_widget == True:
-                            res = create_widget_list_obj([df_1, df_2])
-                            display.display(res)
-                        else:
-                            print(df_1)
-                            pass
+                        res = create_widget_list_obj([df_1, df_2])
+                        display.display(res)
                     pass
                 else:
                     sns.barplot(l, predictor_count.values, alpha=0.9)
@@ -777,10 +741,7 @@ def show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors, title="a
     if subplots is True:
         fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True, layout=(2,2), subplots=subplots, ax=ax)
     else:
-        if ax is None:
-            fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True)
-        else:
-            fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True, ax=ax)
+        fig = df.groupby(["Attribute", "Type Corr"]).size().unstack().plot(kind='bar', stacked=True)
     # plt.show()
     return fig
 
@@ -803,10 +764,7 @@ def show_pie_chart_corr_matrix(data, colors, title="a pie chart for corr matrix"
         fig = df.plot.pie(y='Correlation', title=title, figsize=(6, 6), layout=(2,2), autopct=make_autopct(df["Correlation"].values), subplots=subplots, ax=ax)
     else:
         # fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(5, 5), autopct="%.2f%%",)
-        if ax is None:
-            fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors)
-        else:
-            fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors, ax=ax)
+        fig = df.plot.pie(y='Correlation', labels=index_tmp, figsize=(6, 6), autopct=make_autopct(df["Correlation"].values), colors=colors)
     return fig
 
 
@@ -843,10 +801,7 @@ def show_pie_chart_corr_matrix_finer_analysis(data, colors, title="a pie chart f
         fig = df.plot.pie(y='Correlation', title=title, figsize=(6, 6), layout=(2,2), autopct=make_autopct(df["Correlation"].values), subplots=subplots, ax=ax)
     else:
         # fig = df.plot.pie(y='Correlation', figsize=(5, 5), autopct='%1.1f%%',)
-        if ax is None:
-            fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors)
-        else:
-            fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors, ax=ax)
+        fig = df.plot.pie(y='Correlation', labels=labels, title=title, figsize=(8, 8), autopct=make_autopct(df["Correlation"].values), colors=colors)
     # fig = px.pie(df, values='pop', names='country', title='Population of European continent')
     # fig.show()
     return fig
@@ -1033,54 +988,6 @@ def prepare_data_corr_matrix_pie_finer_analysis(corr_matrix):
     data_norm = Normalizer().fit_transform(X=data[:]).flatten()
     return data_norm, data.flatten()
 
-
-def get_axes_corr_plots(n, figsize, gridshape=None):
-
-    if gridshape is not None:
-        axes = list()
-        fig = plt.figure(figsize=figsize)
-        nrows_tmp = n // 2 if n % 2 == 0 else n // 2 + 1
-        nrows, ncols = gridshape
-        assert (nrows * ncols) == (nrows_tmp * 2), "grid shape is wrong"
-        for ii in range(n):
-            axes.append(fig.add_subplot(nrows, ncols, ii+1))
-            pass
-    else:
-        axes = [None] * n
-        return None, axes
-    return fig, axes
-
-
-def show_pie_hist_charts_abs_corr(corr_matrix, figsize=(10, 10), gridshape=None):
-
-    colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:brown", "tab:purple"]
-
-    n = 2
-    fig, axes = get_axes_corr_plots(n, figsize=figsize, gridshape=gridshape)
-    
-    data_norm, data = prepare_data_corr_matrix_pie(corr_matrix)
-    _ = show_pie_chart_corr_matrix(data, colors[:3], ax=axes[0])
-
-    data, data_2 = prepare_data_corr_matrix_hist(corr_matrix)
-    _ = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors[:3], ax=axes[1])
-    pass
-
-
-def show_pie_hist_charts_corr(corr_matrix, figsize=(10, 10), gridshape=None):
-
-    colors=["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:brown", "tab:purple"]
-
-    n = 2
-    fig, axes = get_axes_corr_plots(n, figsize=figsize, gridshape=gridshape)
-    
-    data_norm, data = prepare_data_corr_matrix_pie_finer_analysis(corr_matrix)
-    _ = show_pie_chart_corr_matrix_finer_analysis(data, colors, ax=axes[0])
-
-    colors=["blue", "orange", "green", "red", "purple", "brown"]
-
-    data, data_2 = prepare_data_corr_matrix_hist_v2(corr_matrix)
-    _ = show_stack_histogram_corr_matrix(data, data_2, corr_matrix, colors, ax=axes[1])
-    pass
 # --------------------------------------------------------------------------- #
 # Pie Charts in Python:
 # --------------------------------------------------------------------------- #
@@ -1110,113 +1017,19 @@ def show_bridges_types_images():
     plt.show()
     pass
 
-# --------------------------------------------------------------------------- #
-# Knn utils Plots
-# --------------------------------------------------------------------------- #
 
-def show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title, ax=None):
+def show_n_neighbors_vs_accuracy(grid_model, n_neighbors_list, title):
 
     # Plot the results of the grid search.
-    if ax is None:
-        fig, axes = plt.subplots(1, 2, figsize=(6, 3))
-        axes[0].errorbar(x=n_neighbors_list,
+    fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+    axes[0].errorbar(x=n_neighbors_list,
                  y=grid_model.cv_results_['mean_test_score'],
                  yerr=grid_model.cv_results_['std_test_score'])
-        axes[0].set(xlabel='n_neighbors', title=f'Classification accuracy ({title})')
-        axes[1].errorbar(x=n_neighbors_list, y=grid_model.cv_results_['mean_fit_time'],
+    axes[0].set(xlabel='n_neighbors', title=f'Classification accuracy ({title})')
+    axes[1].errorbar(x=n_neighbors_list, y=grid_model.cv_results_['mean_fit_time'],
                  yerr=grid_model.cv_results_['std_fit_time'], color='r')
-        axes[1].set(xlabel='n_neighbors', title='Fit time (with caching)')
-        fig.tight_layout()
-        plt.show()
-    else:
-        fig, axes = plt.subplots(1, 2, figsize=(6, 3))
-        ax.errorbar(x=n_neighbors_list,
-                 y=grid_model.cv_results_['mean_test_score'],
-                 yerr=grid_model.cv_results_['std_test_score'])
-        ax.set(xlabel='n_neighbors', title=f'Classification accuracy ({title})')
-        ax.errorbar(x=n_neighbors_list, y=grid_model.cv_results_['mean_fit_time'],
-                 yerr=grid_model.cv_results_['std_fit_time'], color='r')
-        ax.set(xlabel='n_neighbors', title='Fit time (with caching)')
-        pass
-    pass
+    axes[1].set(xlabel='n_neighbors', title='Fit time (with caching)')
+    fig.tight_layout()
+    plt.show()
 
-
-# --------------------------------------------------------------------------- #
-# SVM utils Plots
-# --------------------------------------------------------------------------- #
-
-class MidpointNormalize(Normalize):
-    """
-    Utility function to move the midpoint of a colormap to be around the values of interest.
-    """
-
-
-    def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-        self.midpoint = midpoint
-        Normalize.__init__(self, vmin, vmax, clip)
-
-    def __call__(self, value, clip=None):
-        x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
-        return np.ma.masked_array(np.interp(value, x, y))
-    pass
-
-
-def show_C_vs_gamma_params_svm(X, y, verbose=0, title=None, ax=None):
-
-    # #############################################################################
-    # Train classifiers
-    #
-    # For an initial search, a logarithmic grid with basis
-    # 10 is often helpful. Using a basis of 2, a finer
-    # tuning can be achieved but at a much higher cost.
-
-    # Grid-Search plus Cross-Val techniques
-    C_range = np.logspace(-2, 10, 13)
-    gamma_range = np.logspace(-9, 3, 13)
-    param_grid = dict(gamma=gamma_range, C=C_range)
-    cv = StratifiedShuffleSplit(n_splits=5, test_size=0.2, random_state=42)
-    grid = GridSearchCV(SVC(), param_grid=param_grid, cv=cv)
-    grid.fit(X, y)
-
-    if verbose == 1:
-        print("The best parameters are %s with a score of %0.2f" 
-            % (grid.best_params_, grid.best_score_))
-
-    scores = grid.cv_results_['mean_test_score'].reshape(len(C_range),
-        len(gamma_range))
-    
-    # #############################################################################
-    # Visualization
-    #
-    # draw visualization of parameter effects
-    # plt.figure(figsize=(8, 6))
-    if ax is None:
-        plt.figure(figsize=(5, 3))
-        plt.subplots_adjust(left=.2, right=0.95, bottom=0.15, top=0.95)
-        plt.imshow(scores, interpolation='nearest', cmap=plt.cm.hot,
-           norm=MidpointNormalize(vmin=0.2, midpoint=0.92))
-        plt.xlabel('gamma')
-        plt.ylabel('C')
-        plt.colorbar()
-        plt.xticks(np.arange(len(gamma_range)), gamma_range, rotation=45)
-        plt.yticks(np.arange(len(C_range)), C_range)
-        if title is None:
-            plt.title('Validation accuracy')
-        else:
-            plt.title(f'{title}: Validation accuracy')
-        plt.show()
-    else:
-        img = ax.imshow(scores, interpolation='nearest', cmap=plt.cm.hot,
-           norm=MidpointNormalize(vmin=0.2, midpoint=0.92))
-        ax.set_xlabel('gamma')
-        ax.set_ylabel('C')
-        # ax.colorbar()
-        plt.colorbar(img, ax=ax)
-        # ax.set_xticks(np.arange(len(gamma_range)), gamma_range)
-        # ax.set_yticks(np.arange(len(C_range)), C_range)
-        if title is None:
-            ax.set_title('Validation accuracy')
-        else:
-            ax.set_title(f'{title}: Validation accuracy')
-        pass
     pass
