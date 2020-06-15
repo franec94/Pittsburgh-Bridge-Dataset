@@ -19,7 +19,7 @@ def get_dataset_location():
     return dataset_path, dataset_name, column_names, TARGET_COL
 
 def get_estimators(random_state=0):
-    estimators_list = [GaussianNB(), LogisticRegression(random_state=random_state), KNeighborsClassifier(), SGDClassifier(random_state=random_state), SVC(random_state=random_state), DecisionTreeClassifier(random_state=0), RandomForestClassifier(random_state=random_state)]
+    estimators_list = [GaussianNB(), LogisticRegression(random_state=random_state), KNeighborsClassifier(), SGDClassifier(random_state=random_state), SVC(random_state=random_state, probability=True), DecisionTreeClassifier(random_state=0), RandomForestClassifier(random_state=random_state)]
     def get_clf_name(a_clf):
         
         clf_name = str(a_clf).split('(')[0]
