@@ -82,13 +82,53 @@ from sklearn.decomposition import PCA, KernelPCA
 # FUNCTIONS
 # =========================================================================== #
 
-def show_table_pc_analysis(X):
+def calc_cum_var_explaned(X, kernel):
+    n_components = X.shape[1]; 
+    print(f"Cumulative varation explained(percentage) up to given number of pcs:")
+
+    pca = KernelPCA(n_components=n_components, kernel=kernel) # pca = PCA(n_components=2)
+    pca = pca.fit(X); X_pca = pca.transform(X) # X_pca = pca.fit_transform(X)
+
+    tmp_data = []
+    principal_components = [pc for pc in '2,5,6,7,8,9,10'.split(',')]
+    for _, pc in enumerate(principal_components):
+        n_components = int(pc)
+    
+        # cum_var_exp_up_to_n_pcs = np.cumsum(pca.explained_variance_ratio_)[n_components-1]
+        # print(f"Cumulative varation explained up to {n_components} pcs = {cum_var_exp_up_to_n_pcs}")
+        # print(f"# pcs {n_components}: {cum_var_exp_up_to_n_pcs*100:.2f}%")
+
+        expl_var_kpca = np.var(X_pca, axis=0)
+        expl_var_ratio_kpca = expl_var_kpca[:n_components] / np.sum(expl_var_kpca)
+
+        tmp_data.append(np.sum(expl_var_ratio_kpca) * 100)
+        # tmp_data.append(expl_var_kpca[-1])
+        pass
+    # pprint(tmp_data)
+    return tmp_data
+
+
+def show_table_pc_analysis(X, show_cum_exp_kpca=False):
+    
+    principal_components = [pc for pc in '2,5,6,7,8,9,10'.split(',')]
+
+    kernels_list = ["linear", "poly", "rbf", "sigmoid", "cosine"]
+    columns = ['# PCS', 'CumVarExp(%)'] 
+
     n_components = X.shape[1]; pca = PCA(n_components=n_components) # pca = PCA(n_components=2)
     pca = pca.fit(X); X_pca = pca.transform(X) # X_pca = pca.fit_transform(X)
     print(f"Cumulative varation explained(percentage) up to given number of pcs:")
 
+    rows = len('2,5,6,7,8,9,10'.split(','))
+    cols =  2
+    if show_cum_exp_kpca is True:
+        cols = cols + len(kernels_list)
+        res = list(map(lambda xx: f"{xx.capitalize()} CumVarExp(%)", kernels_list))
+        columns = ['# PCS', 'CumVarExp(%)'] + res
+    
     tmp_data = []
-    principal_components = [pc for pc in '2,5,6,7,8,9,10'.split(',')]
+    data = np.zeros(shape=(rows, cols))
+
     for _, pc in enumerate(principal_components):
         n_components = int(pc)
     
@@ -97,9 +137,17 @@ def show_table_pc_analysis(X):
         # print(f"# pcs {n_components}: {cum_var_exp_up_to_n_pcs*100:.2f}%")
         tmp_data.append([n_components, cum_var_exp_up_to_n_pcs * 100])
         pass
-    tmp_df = pd.DataFrame(data=tmp_data, columns=['# PCS', 'Cumulative Varation Explained (percentage)'])
+    data[:,0:2] = tmp_data
+
+    if show_cum_exp_kpca is True:
+        for ii, kernel in enumerate(kernels_list):
+            tmp_data = calc_cum_var_explaned(X, kernel)
+            # +pprint(tmp_data)
+            data[:, ii+2] = tmp_data
+            pass
     # tmp_df.head(len(tmp_data))
-    return tmp_df.head(len(tmp_data))
+    tmp_df = pd.DataFrame(data=data, columns=columns)
+    return tmp_df.head(len(tmp_df))
 
 def show_table_summary_grid_search(df, df_auc, df_pvalue, flag_return=False):
     if flag_return is True:
@@ -303,8 +351,27 @@ def build_boxplot(df, predictor_name=None, columns_2_avoid=None, features_vs_val
 # show_frequency_distribution_predictor
 # --------------------------------------------------------------------------- #
 
+def get_data_for_column_2_avoid(df, predictor_name, features_vs_values):
+    if predictor_name == 'ERECTED':
+        features_vs_values['binned'] = dict(zip(['CRAFT', 'EMERGING', 'MATURE', 'MODERN'], range(1,5)))
+        pass
+    columns_2_keep = ['binned']
+    start = min(df[predictor_name].values)
+    stop = max(df[predictor_name].values)
+    bins = np.linspace(start, stop, num=5, endpoint=True, retstep=False, dtype=None, axis=0)
+    labels = [1, 2, 3, 4]
+    df['binned'] = pd.cut(df[predictor_name], bins=bins, labels=labels)
+    return df, features_vs_values, columns_2_keep
+
+
 def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0, show_widget=False):
-    
+    df_ = copy.deepcopy(df)
+    features_vs_values_ = copy.deepcopy(features_vs_values)
+    show_frequency_distribution_predictor_(df=df_, predictor_name=predictor_name, columns_2_avoid=columns_2_avoid, features_vs_values=features_vs_values_, target_col=target_col, grid_display=grid_display, hue=hue, verbose=verbose, show_widget=show_widget)
+    pass
+
+
+def show_frequency_distribution_predictor_(df, predictor_name=None, columns_2_avoid=None, features_vs_values=None, target_col=None, grid_display=False, hue=None, verbose=0, show_widget=False):
     # Setu up columns names to be used for building up related histograms
     if columns_2_avoid is not None:
         # if 'columns_2_avoid' is not None filter those columns
@@ -320,12 +387,21 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
         else:
             columns_2_keep = list(set([predictor_name]) & set(columns_2_keep))
     
+    if predictor_name in columns_2_avoid:
+        # pprint(features_vs_values)
+        df, features_vs_values, columns_2_keep = get_data_for_column_2_avoid(df, predictor_name, features_vs_values)
+        # pprint(features_vs_values)
+        # return
+        pass
+
     sns.set(style="darkgrid")
     # for index, predictor in enumerate(df.columns):
     for _, predictor in enumerate(columns_2_keep):
         # print(index, predictor)
         predictor_count = df[predictor].value_counts()
-
+        
+        colors_base = list(sns.color_palette()) # ["tab:blue", "tab:orange", "tab:green", "tab:red", "tab:brown", "tab:purple"]
+        colors = [0] * len(predictor_count.index)
         if features_vs_values is not None:
             l = [None] * len(predictor_count.index)
             print(features_vs_values[predictor])
@@ -335,6 +411,7 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
                 for ii, val in enumerate(predictor_count.index):
                     if val == v:
                         l[ii] = k
+                        colors[val-1] = colors_base[ii]
                         break
             if grid_display is True: pass
             else:
@@ -348,7 +425,8 @@ def show_frequency_distribution_predictor(df, predictor_name=None, columns_2_avo
                     axs[0].set_title('Frequency Distribution of %s' % (predictor))
                     axs[0].set_ylabel('Number of Occurrences', fontsize=12)
                     axs[0].set_xlabel('%s' % (predictor), fontsize=12)
-                    df_1 = plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1], verbose=verbose)
+
+                    df_1 = plot_hue_hist_v2(hue, predictor, features_vs_values, df, ax=axs[1], verbose=verbose, colors=colors)
                     df_2 = plot_hue_hist_v2(predictor, hue, features_vs_values, df, ax=axs[2], verbose=verbose)
                     if verbose == 1:
                         if show_widget == True:
