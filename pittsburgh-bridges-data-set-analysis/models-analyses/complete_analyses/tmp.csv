@@ -1,0 +1,6 @@
+,Acc Train,Acc Test,C,class_weight,fit_intercept,penalty,random_state,solver,tol
+LogReg linear,0.97,0.41,0.001,balanced,True,l2,0,sag,0.001
+LogReg poly,0.92,0.32,0.001,balanced,True,l2,0,sag,0.001
+LogReg rbf,0.92,0.47,0.001,balanced,True,l2,0,sag,0.0001
+LogReg cosine,0.92,0.74,1.0,None,True,l2,0,liblinear,0.0001
+LogReg sigmoid,0.91,0.38,0.001,balanced,True,l2,0,sag,0.0001
